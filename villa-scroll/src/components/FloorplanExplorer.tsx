@@ -63,8 +63,8 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
     const ctx = gsap.context(() => {
       const replayTrigger = (triggerEl: Element | null) => ({
         trigger: triggerEl,
-        start: "top 92%",
-        toggleActions: "play none none none",
+        start: "top 98%",
+        toggleActions: "play none none reset",
       });
 
       const animEl = (
@@ -87,7 +87,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
             duration: dur * spd,
             ...(staggerOrDelay?.stagger ? { stagger: staggerOrDelay.stagger * spd } : {}),
             ...(staggerOrDelay?.delay ? { delay: staggerOrDelay.delay * spd } : {}),
-            ease: "power3.out",
+            ease: "power2.out",
             scrollTrigger: replayTrigger(triggerEl),
           }
         );
@@ -126,12 +126,12 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
       }
     }, el);
 
-    const refreshRaf = requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
+    const t1 = setTimeout(() => ScrollTrigger.refresh(), 260);
+    const t2 = setTimeout(() => ScrollTrigger.refresh(), 900);
 
     return () => {
-      cancelAnimationFrame(refreshRaf);
+      clearTimeout(t1);
+      clearTimeout(t2);
       ctx.revert();
     };
   }, [anim?.enabled, anim?.speed, anim?.directionMode]);

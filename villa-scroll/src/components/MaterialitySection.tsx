@@ -78,8 +78,8 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
     const ctx = gsap.context(() => {
       const replayTrigger = (triggerEl: Element | null) => ({
         trigger: triggerEl,
-        start: "top 92%",
-        toggleActions: "play none none none",
+        start: "top 98%",
+        toggleActions: "play none none reset",
       });
 
       const animEl = (
@@ -101,7 +101,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
             force3D: true,
             duration: dur * spd,
             ...(staggerVal ? { stagger: staggerVal * spd } : {}),
-            ease: "power3.out",
+            ease: "power2.out",
             scrollTrigger: replayTrigger(triggerEl),
           }
         );
@@ -137,12 +137,15 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
       }
     }, el);
 
-    const refreshRaf = requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
+    const t1 = setTimeout(() => ScrollTrigger.refresh(), 260);
+    const t2 = setTimeout(() => ScrollTrigger.refresh(), 900);
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      void document.fonts.ready.then(() => ScrollTrigger.refresh());
+    }
 
     return () => {
-      cancelAnimationFrame(refreshRaf);
+      clearTimeout(t1);
+      clearTimeout(t2);
       ctx.revert();
     };
   }, [anim?.enabled, anim?.speed, anim?.directionMode]);
