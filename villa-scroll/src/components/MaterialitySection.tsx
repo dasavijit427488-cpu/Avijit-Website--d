@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSiteConfig } from "@/context/SiteConfigContext";
@@ -39,19 +39,24 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
   const exteriorGridRef = useRef<HTMLDivElement | null>(null);
   const quoteCardRef = useRef<HTMLDivElement | null>(null);
 
-  const [randomExteriors, setRandomExteriors] = useState(
-    mat.exteriorPool.slice(0, 4).map((item, origIdx) => ({ ...item, origIdx }))
+  const defaultExteriors = useMemo(
+    () => mat.exteriorPool.slice(0, 4).map((item, origIdx) => ({ ...item, origIdx })),
+    [mat.exteriorPool]
   );
+  const [shuffledExteriors, setShuffledExteriors] = useState<typeof defaultExteriors | null>(null);
+  const randomExteriors = shuffledExteriors ?? defaultExteriors;
 
-  // Sync exterior house views whenever pool updates or on client mount
+  // Sync exterior house views whenever pool has >4 options on client mount
   useEffect(() => {
-    const indexed = mat.exteriorPool.map((item, origIdx) => ({ ...item, origIdx }));
-    if (indexed.length <= 4) {
-      setRandomExteriors(indexed);
-    } else {
-      const shuffled = [...indexed].sort(() => Math.random() - 0.5);
-      setRandomExteriors(shuffled.slice(0, 4));
+    if (mat.exteriorPool.length <= 4) {
+      return;
     }
+    const timer = setTimeout(() => {
+      const indexed = mat.exteriorPool.map((item, origIdx) => ({ ...item, origIdx }));
+      const shuffled = [...indexed].sort(() => Math.random() - 0.5);
+      setShuffledExteriors(shuffled.slice(0, 4));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [mat.exteriorPool]);
 
   const anim = config.design?.animation;

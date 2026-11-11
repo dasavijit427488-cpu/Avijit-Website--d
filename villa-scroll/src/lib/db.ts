@@ -1,12 +1,37 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import {
   DEFAULT_SITE_CONFIG,
   type SiteConfig,
 } from "./defaultSiteConfig";
 
-export const DATA_DIR = path.join(process.cwd(), "data");
+function resolveDataDir(): string {
+  const localData = path.join(process.cwd(), "data");
+  try {
+    if (!fs.existsSync(localData)) {
+      fs.mkdirSync(localData, { recursive: true });
+    }
+    const probeFile = path.join(localData, ".rw_check");
+    fs.writeFileSync(probeFile, "ok");
+    fs.unlinkSync(probeFile);
+    return localData;
+  } catch {
+    // Vercel / Netlify serverless deployments mount the app directory read-only; /tmp is writable
+    const tmpData = path.join(os.tmpdir(), "villa-scroll-data");
+    try {
+      if (!fs.existsSync(tmpData)) {
+        fs.mkdirSync(tmpData, { recursive: true });
+      }
+    } catch {
+      // Ignore directory probe failure; getSiteConfig still falls back to DEFAULT_SITE_CONFIG
+    }
+    return tmpData;
+  }
+}
+
+export const DATA_DIR = resolveDataDir();
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 export const DB_PATH = path.join(DATA_DIR, "villa.db");
 
@@ -220,30 +245,34 @@ function mergeSection<T>(defaults: T, stored: unknown): T {
 }
 
 export function getSiteConfig(): SiteConfig {
-  const db = getDb();
-  const rows = db.prepare("SELECT section_key, data_json FROM site_sections").all() as Array<{
-    section_key: string;
-    data_json: string;
-  }>;
+  try {
+    const db = getDb();
+    const rows = db.prepare("SELECT section_key, data_json FROM site_sections").all() as Array<{
+      section_key: string;
+      data_json: string;
+    }>;
 
-  const map = new Map<string, unknown>();
-  for (const row of rows) {
-    try {
-      map.set(row.section_key, JSON.parse(row.data_json));
-    } catch {
-      // Ignore malformed JSON and fall back to defaults
+    const map = new Map<string, unknown>();
+    for (const row of rows) {
+      try {
+        map.set(row.section_key, JSON.parse(row.data_json));
+      } catch {
+        // Ignore malformed JSON and fall back to defaults
+      }
     }
-  }
 
-  return {
-    brand: mergeSection(DEFAULT_SITE_CONFIG.brand, map.get("brand")),
-    hero: mergeSection(DEFAULT_SITE_CONFIG.hero, map.get("hero")),
-    rooms: mergeSection(DEFAULT_SITE_CONFIG.rooms, map.get("rooms")),
-    materiality: mergeSection(DEFAULT_SITE_CONFIG.materiality, map.get("materiality")),
-    masterplan: mergeSection(DEFAULT_SITE_CONFIG.masterplan, map.get("masterplan")),
-    contact: mergeSection(DEFAULT_SITE_CONFIG.contact, map.get("contact")),
-    design: mergeSection(DEFAULT_SITE_CONFIG.design, map.get("design")),
-  };
+    return {
+      brand: mergeSection(DEFAULT_SITE_CONFIG.brand, map.get("brand")),
+      hero: mergeSection(DEFAULT_SITE_CONFIG.hero, map.get("hero")),
+      rooms: mergeSection(DEFAULT_SITE_CONFIG.rooms, map.get("rooms")),
+      materiality: mergeSection(DEFAULT_SITE_CONFIG.materiality, map.get("materiality")),
+      masterplan: mergeSection(DEFAULT_SITE_CONFIG.masterplan, map.get("masterplan")),
+      contact: mergeSection(DEFAULT_SITE_CONFIG.contact, map.get("contact")),
+      design: mergeSection(DEFAULT_SITE_CONFIG.design, map.get("design")),
+    };
+  } catch {
+    return DEFAULT_SITE_CONFIG;
+  }
 }
 
 export function saveSiteSection<K extends keyof SiteConfig>(

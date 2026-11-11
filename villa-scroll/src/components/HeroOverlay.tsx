@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getLenis } from "@/hooks/useLenis";
 import { useSiteConfig } from "@/context/SiteConfigContext";
 import {
@@ -64,9 +64,14 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
     contact: brand.navContactLabel,
   };
 
-  const pageOrder: SitePageId[] = design?.pageOrder?.length
-    ? design.pageOrder
-    : ["residence", "materiality", "masterplan", "contact"];
+  const rawPageOrder = design?.pageOrder;
+  const pageOrder = useMemo<SitePageId[]>(
+    () =>
+      rawPageOrder?.length
+        ? rawPageOrder
+        : ["residence", "materiality", "masterplan", "contact"],
+    [rawPageOrder]
+  );
 
   const orderedNavItems = pageOrder.map((id) => ({
     id,
@@ -211,7 +216,12 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
   }, [pageOrder, design?.heroOffsetX, design?.heroOffsetY]);
 
   // Dynamic Browser Address Bar URL Sync when navigating / scrolling sections
-  const initialMountTimeRef = useRef<number>(Date.now());
+  const initialMountTimeRef = useRef<number>(0);
+  useEffect(() => {
+    if (initialMountTimeRef.current === 0) {
+      initialMountTimeRef.current = Date.now();
+    }
+  }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (design?.dynamicUrlSync === false) return;

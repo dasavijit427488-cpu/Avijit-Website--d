@@ -57,12 +57,12 @@ export default function Home() {
     }
   }, [isLoaded, config.design?.pages]);
 
-  const pageOrder = config.design?.pageOrder?.length
-    ? config.design.pageOrder
-    : (["residence", "materiality", "masterplan", "contact"] as SitePageId[]);
-
   // Group consecutive light/marble sections under a shared MarbleScrollBackdrop
+  const rawPageOrder = config.design?.pageOrder;
   const chunks = useMemo<RenderChunk[]>(() => {
+    const pageOrder = rawPageOrder?.length
+      ? rawPageOrder
+      : (["residence", "materiality", "masterplan", "contact"] as SitePageId[]);
     const result: RenderChunk[] = [];
     for (const id of pageOrder) {
       if (id === "residence") {
@@ -78,7 +78,7 @@ export default function Home() {
       }
     }
     return result;
-  }, [pageOrder]);
+  }, [rawPageOrder]);
 
   return (
     <main className="site-live-root relative min-h-screen bg-black text-white selection:bg-amber-400 selection:text-black">

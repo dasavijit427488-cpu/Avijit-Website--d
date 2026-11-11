@@ -79,17 +79,20 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   }, [config.design]);
 
   useEffect(() => {
-    refreshConfig();
+    const initTimer = setTimeout(() => {
+      void refreshConfig();
+    }, 0);
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        refreshConfig();
+        void refreshConfig();
       }
     };
     window.addEventListener("focus", refreshConfig);
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
+      clearTimeout(initTimer);
       window.removeEventListener("focus", refreshConfig);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
