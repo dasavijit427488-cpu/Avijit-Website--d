@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #050403;
+  --foreground: #f5f0e8;
+  --font-cinzel: "Cinzel", "Times New Roman", serif;
+  --font-cormorant: "Cormorant Garamond", Georgia, serif;
+  --font-playfair: "Playfair Display", Georgia, serif;
+  --font-space-mono: "Space Mono", monospace;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --active-display-font: var(--font-cinzel);
+  --active-heading-font: var(--font-playfair);
+  --active-body-font: var(--font-playfair);
+  --site-accent: #8b6914;
+  --site-heading: #1c1812;
+  --site-body: #4a4236;
+  --site-muted: #6e6454;
+  --site-hero-title: #f2ca50;
+  --site-hero-text: #f5ede0;
+  --site-room-title: #f2ca50;
+  --site-room-text: #fbf6ee;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-cinzel: var(--font-cinzel);
+  --font-cormorant: var(--font-cormorant);
+  --font-sans: var(--font-sans);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Clean Architectural Typography Classes */
+.font-display {
+  font-family: var(--active-display-font);
+}
+
+.font-script {
+  font-family: var(--active-body-font);
+}
+
+.font-italian {
+  font-family: var(--active-display-font);
+}
+
+.font-serif-italic {
+  font-family: var(--active-heading-font);
+}
+
+.font-editorial {
+  font-family: var(--active-body-font);
+}
+
+.font-editorial-italic {
+  font-family: var(--active-body-font);
+  font-style: italic;
+}
+
+.font-body {
+  font-family: var(--active-body-font);
+}
+
+.font-tech {
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+}
+
+.font-serif-luxury {
+  font-family: var(--active-heading-font);
+}
+
+.font-sans-luxury {
+  font-family: var(--active-body-font);
+}
+
+.font-playfair {
+  font-family: var(--active-heading-font);
+  font-variant-numeric: lining-nums;
+}
+
+.admin-playfair,
+.admin-playfair input,
+.admin-playfair textarea,
+.admin-playfair select,
+.admin-playfair button {
+  font-family: var(--font-playfair);
+  font-variant-numeric: lining-nums;
+}
+
+.font-space-mono {
+  font-family: var(--active-body-font);
+  font-variant-numeric: lining-nums;
+}
+
+/* Per-page custom font & text alignment utilities */
+.section-custom-font,
+.section-custom-font .font-playfair,
+.section-custom-font .font-display,
+.section-custom-font .font-body,
+.section-custom-font .font-editorial,
+.section-custom-font .font-editorial-italic,
+.section-custom-font .font-serif-luxury,
+.section-custom-font .font-sans-luxury,
+.section-custom-font .font-tech {
+  font-family: var(--section-font);
+}
+
+/* Global Live Website Text Color Bindings (Controlled from /admin) */
+.site-live-root .text-\[\#8b6914\],
+.site-live-root .text-\[\#8c6812\],
+.site-live-root .text-\[\#9c7212\] {
+  color: var(--site-accent);
+}
+
+.site-live-root .text-\[\#1c1812\],
+.site-live-root .text-\[\#1f1b15\] {
+  color: var(--site-heading);
+}
+
+.site-live-root .text-\[\#4a4236\],
+.site-live-root .text-\[\#574e40\],
+.site-live-root .text-\[\#3f372d\] {
+  color: var(--site-body);
+}
+
+.site-live-root .text-\[\#6e6454\] {
+  color: var(--site-muted);
+}
+
+/* 3D Image Animation & Border Effects + Admin Entrance Animations */
+@keyframes float3dCard {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: translate3d(0, -6px, 12px) rotateX(2.5deg) rotateY(-2.5deg);
+  }
+}
+
+@keyframes pulseGoldBorder {
+  0%, 100% {
+    box-shadow: 0 18px 45px rgba(140, 110, 45, 0.16), 0 0 0 0 rgba(212, 175, 55, 0.35);
+  }
+  50% {
+    box-shadow: 0 24px 60px rgba(180, 136, 28, 0.32), 0 0 28px 2px rgba(212, 175, 55, 0.38);
+  }
+}
+
+@keyframes adminFadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.animate-float-3d {
+  animation: float3dCard 4.6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+.animate-pulse-gold {
+  animation: pulseGoldBorder 3.2s ease-in-out infinite;
+}
+
+.admin-card-enter {
+  animation: adminFadeUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Metallic Liquid Gold Typography Gradient */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #fef3c7 20%, #e8ca95 50%, #c49a5b 80%, #996515 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Clean Sculptural Ivory Gradient */
+.text-ivory-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #ede6db 60%, #c5bcae 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Header capsule shadows & glass handled directly by adaptive component classes */
+.header-capsule {
+  will-change: background-color, border-color;
+}
+
+/* Haute Champagne Pearl Gradient */
+.text-pearl-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #faeada 50%, #dfc299 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hide Next.js Dev Indicator and Portal icons completely */
+nextjs-portal,
+[data-nextjs-dev-overlay],
+[data-nextjs-toast],
+div[data-nextjs-portal],
+button[data-nextjs-dev-tools-button],
+[data-nextjs-dev-tools],
+#nextjs-dev-tools-header,
+[data-nextjs-dialog-overlay],
+div[role="region"][aria-label="Next.js Dev Tools"],
+[data-nextjs-toast-wrapper],
+[data-nextjs-dev-tools-container],
+aside[data-nextjs-dev-tools-button] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0) !important;
+  width: 0 !important;
+  height: 0 !important;
+}

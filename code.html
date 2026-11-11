@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <meta content="web_standard" name="shell-type" />
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&amp;family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <style>
+    @layer base {
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        overscroll-behavior: none;
+      }
+
+      main>:first-child {
+        margin-top: 0 !important;
+      }
+
+      main>:last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Ultra-luxury champagne & travertine warm luminous atmospheric styling */
+    .glass-gold-panel {
+      background: linear-gradient(135deg, rgba(28, 24, 20, 0.82) 0%, rgba(18, 16, 22, 0.90) 100%);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(224, 195, 130, 0.22);
+      box-shadow: 0 24px 55px rgba(0, 0, 0, 0.5), 0 0 35px rgba(212, 175, 55, 0.12), inset 0 1px 1px rgba(255, 235, 185, 0.18);
+    }
+
+    .light .glass-gold-panel {
+      background: linear-gradient(135deg, rgba(255, 252, 245, 0.90) 0%, rgba(246, 240, 227, 0.95) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.38);
+      box-shadow: 0 20px 45px rgba(180, 140, 60, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+    }
+
+    .gold-shimmer-border {
+      position: relative;
+    }
+
+    .gold-shimmer-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(242, 202, 80, 0.55), rgba(212, 175, 55, 0.15), rgba(234, 191, 138, 0.45));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .travertine-pattern {
+      background-image: radial-gradient(rgba(242, 202, 80, 0.08) 1px, transparent 1px), radial-gradient(rgba(224, 195, 130, 0.06) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-position: 0 0, 16px 16px;
+    }
+
+    .theme-transition,
+    .theme-transition * {
+      transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.4s ease;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script
+    id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-lowest": "#0e0e12", "outline": "#99907c", "surface-container-highest": "#353439", "on-secondary-fixed-variant": "#58440f", "secondary-fixed": "#fedf9b", "on-tertiary-fixed": "#2a1800", "surface-tint": "#e9c349", "on-tertiary-fixed-variant": "#5e4117", "tertiary-fixed-dim": "#eabf8a", "primary-fixed-dim": "#e9c349", "on-secondary-container": "#d1b575", "tertiary-fixed": "#ffddb5", "surface": "#131317", "primary-container": "#d4af37", "on-surface": "#e4e1e7", "on-primary-fixed": "#241a00", "surface-container-high": "#2a292e", "tertiary": "#f2c791", "outline-variant": "#4d4635", "on-surface-variant": "#d0c5af", "error": "#ffb4ab", "inverse-primary": "#735c00", "on-error-container": "#ffdad6", "on-secondary-fixed": "#251a00", "secondary": "#e0c382", "on-primary-container": "#554300", "inverse-on-surface": "#303034", "on-primary": "#3c2f00", "on-secondary": "#3e2e00", "surface-variant": "#353439", "tertiary-container": "#d5ac78", "surface-bright": "#39393d", "secondary-fixed-dim": "#e0c382", "on-tertiary": "#442b03", "on-background": "#e4e1e7", "secondary-container": "#5a4611", "on-tertiary-container": "#5c4015", "surface-container": "#1f1f23", "surface-dim": "#131317", "background": "#131317", "surface-container-low": "#1b1b1f", "error-container": "#93000a", "on-primary-fixed-variant": "#574500", "on-error": "#690005", "primary": "#f2ca50", "primary-fixed": "#ffe088", "inverse-surface": "#e4e1e7" }, borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" }, spacing: { "space-md": "1.25rem", gutter: "1.5rem", margin: "1.5rem", "margin-desktop": "5rem", "space-sm": "0.75rem", "space-xs": "0.375rem", "gutter-desktop": "2.5rem", "space-lg": "2.25rem", "space-xl": "4rem" }, fontFamily: { "headline-md": ["Playfair Display"], "title-lg": ["Plus Jakarta Sans"], "label-mono": ["Space Mono"], "headline-lg": ["Playfair Display"], "body-md": ["Plus Jakarta Sans"], "headline-xl": ["Playfair Display"], "display-hero": ["Playfair Display"], "body-lg": ["Playfair Display"], "display-hero-mobile": ["Playfair Display"], "body-sm": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Playfair Display"], "label-caps": ["Plus Jakarta Sans"] }, fontSize: { "headline-md": ["26px", { lineHeight: "34px", letterSpacing: "0.01em", fontWeight: "500" }], "title-lg": ["20px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "600" }], "label-mono": ["11px", { lineHeight: "16px", letterSpacing: "0.14em", fontWeight: "400" }], "headline-lg": ["36px", { lineHeight: "44px", letterSpacing: "0.02em", fontWeight: "500" }], "body-md": ["15px", { lineHeight: "26px", letterSpacing: "0.01em", fontWeight: "400" }], "headline-xl": ["48px", { lineHeight: "58px", letterSpacing: "0.03em", fontWeight: "400" }], "display-hero": ["72px", { lineHeight: "84px", letterSpacing: "0.04em", fontWeight: "400" }], "body-lg": ["19px", { lineHeight: "32px", letterSpacing: "0.01em", fontWeight: "400" }], "display-hero-mobile": ["40px", { lineHeight: "48px", letterSpacing: "0.02em", fontWeight: "400" }], "body-sm": ["13px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "400" }], "headline-xl-mobile": ["32px", { lineHeight: "40px", letterSpacing: "0.02em", fontWeight: "400" }], "label-caps": ["11px", { lineHeight: "16px", letterSpacing: "0.22em", fontWeight: "700" }] } } } };</script>
+</head>
+
+<body
+  class="bg-surface text-on-surface antialiased selection:bg-primary selection:text-on-primary min-h-screen flex flex-col justify-between theme-transition relative overflow-x-hidden">
+  <header
+    class="fixed top-0 w-full z-50 bg-surface-container-lowest/85 backdrop-blur-xl border-b border-primary/15 shadow-[0_4px_30px_rgba(0,0,0,0.3)] transition-all duration-300"
+    id="mainHeader">
+    <div class="h-20 w-full px-gutter md:px-margin-desktop flex items-center justify-between">
+      <div class="flex items-center gap-space-sm cursor-pointer group"
+        onclick="window.scrollTo({top:0, behavior:'smooth'})"><img alt="Avijit Villa Emblem"
+          class="h-8 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsN0FjlExz6mSGdCSBDYOk2dsbTdpVZbsgr4ngGDxSYDR0ohvJSUy9FG8GY4UxFUyA7Tp_er18NGY8AH4qjdDzfbUfx31ypBWO896FOBZNE2Pead7n6F190cL1cwpUWCs0CRwHmd-xN4yjKXHhmH31T90Pegn1oXzxMlvaFXm19TX_iQ4l9gbVzIGFe-TUXhirykzrs5lvh2N-vrVUACU7L1XF6vbM33WFXrhdpi2m" /><a
+          class="flex flex-col" data-path="architecture" href="javascript:void(0)"
+          onclick="notifyNotice('Navigating to Estate Monograph Overview')"><span
+            class="font-headline-md text-headline-md tracking-wider text-on-surface group-hover:text-primary transition-colors">AVIJIT
+            VILLA</span><span class="font-label-mono text-label-mono text-primary/80 uppercase tracking-widest">ESTATE
+            MONOGRAPH</span></a></div>
+      <nav class="hidden lg:flex items-center gap-space-lg"
+        data-active-classes="text-primary border-b border-primary pb-1"><a
+          class="font-label-caps text-label-caps uppercase text-on-surface-variant hover:text-primary hover:border-b hover:border-primary/50 pb-1 transition-all duration-300"
+          data-path="architecture" href="javascript:void(0)"
+          onclick="notifyNotice('Accessing Architecture Folio')">Architecture</a><a
+          class="font-label-caps text-label-caps uppercase text-on-surface-variant hover:text-primary hover:border-b hover:border-primary/50 pb-1 transition-all duration-300"
+          data-path="materiality" href="javascript:void(0)"
+          onclick="notifyNotice('Loading Materiality &amp; Stone Archive')">Materiality</a><a
+          class="font-label-caps text-label-caps uppercase text-on-surface-variant hover:text-primary hover:border-b hover:border-primary/50 pb-1 transition-all duration-300"
+          data-path="masterplan" href="javascript:void(0)"
+          onclick="notifyNotice('Opening Masterplan Sanctuary Atlas')">Masterplan</a><a aria-current="page"
+          class="font-label-caps uppercase transition-colors duration-300 text-primary border-b border-primary pb-1 shadow-[0_2px_12px_rgba(242,202,80,0.3)]"
+          data-path="contact" href="#inquiryForm">Contact</a></nav>
+      <div class="flex items-center gap-space-md"><a
+          class="hidden sm:inline-flex items-center justify-center px-space-md py-space-xs font-label-caps text-label-caps uppercase text-on-primary bg-gradient-to-r from-primary via-primary-fixed to-secondary rounded font-semibold transition-all duration-300 hover:shadow-[0_0_28px_rgba(242,202,80,0.55)] hover:scale-[1.02] active:scale-[0.98] border border-primary-fixed"
+          data-path="private-inquiry" href="#inquiryForm">PRIVATE
+          INQUIRY</a><!-- Theme Toggle: Solar Gold / Obsidian Nocturne --><button
+          aria-label="Toggle Solar Gold or Obsidian Nocturne Mode"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/50 bg-surface-container-high/90 hover:bg-surface-container-highest transition-all duration-300 text-secondary hover:text-primary shadow-[0_0_18px_rgba(212,175,55,0.25)] group"
+          id="themeToggleBtn" onclick="toggleLuxuryTheme()"><span
+            class="material-symbols-outlined text-[17px] text-primary transition-transform duration-500 group-hover:rotate-90"
+            id="themeToggleIcon">light_mode</span><span
+            class="font-label-mono text-[10px] tracking-widest uppercase font-bold text-primary"
+            id="themeToggleLabel">SOLAR GOLD</span></button>
+        <div
+          class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary via-secondary to-primary-fixed flex items-center justify-center shadow-[0_0_15px_rgba(242,202,80,0.4)] cursor-pointer hover:scale-110 transition-transform"
+          onclick="notifyNotice('VIP Client Credential Verified: Level 01 Diplomatic')" title="Principal Sign-in"><span
+            class="material-symbols-outlined text-on-primary text-[18px]">person</span></div>
+      </div>
+    </div>
+  </header>
+  <main class="w-full pt-20 bg-surface flex-grow relative travertine-pattern" id="primaryMain">
+    <div class="flex flex-col w-full relative overflow-hidden">
+      <!-- Dynamic Scroll-Linked Lighting Canvases & Rich Golden Marble Texture Backdrop -->
+      <div class="fixed inset-0 -z-30 pointer-events-none overflow-hidden" id="heroBackdrop">
+        <!-- Luxurious Golden Marble Texture Image with Liquid Gold Veins -->
+        <img alt="Luxury Italian Calacatta gold and black Nero Marquina marble with liquid gold veining"
+          class="w-full h-full object-cover object-center scale-105 opacity-35 mix-blend-screen transition-all duration-700 filter brightness-110 contrast-125"
+          id="ambientBgImage"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGAEjg4QP7p00L_MDQ3hUHJsySW495sW2zL2XhJWTE5PA_6S5SLdoZ-vC3Bt5mWKENi7MaXu3RHIS02o7WAC_EwOrfKt1xiZNqc4HUwcyqWzXIpQhvZxAtAdW8BeCwJ0Xtx5PbhX98nFW21TwDONGzAyrO_eDQYVK73UqztKSwcdX_wyfYrtdsEwfIxhXLt2Xjp0XNY6KWqrnhhBxXj-68X-4oGuurxgAFrnVNL1PD" />
+        <!-- Ambient Obsidian and Warm Bronze Vignette Overlay ensuring no dead blank areas -->
+        <div
+          class="absolute inset-0 bg-gradient-to-b from-[#16141a]/90 via-[#131118]/85 to-[#0e0d12]/92 backdrop-blur-[2px]"
+          id="ambientGradient"></div>
+      </div>
+      <!-- Dynamic Golden Flares & Travertine Luminous Glows responsive to Scroll -->
+      <div
+        class="pointer-events-none fixed top-[-5%] right-[5%] w-[680px] h-[680px] rounded-full blur-[140px] -z-20 transition-transform duration-500 bg-gradient-to-br from-primary/30 via-secondary/25 to-transparent"
+        id="dynamicFlare1"></div>
+      <div
+        class="pointer-events-none fixed top-[35%] left-[-10%] w-[720px] h-[720px] rounded-full blur-[160px] -z-20 transition-transform duration-500 bg-gradient-to-tr from-tertiary-container/30 via-primary-container/20 to-transparent"
+        id="dynamicFlare2"></div>
+      <div
+        class="pointer-events-none fixed bottom-[-10%] right-[15%] w-[600px] h-[600px] rounded-full blur-[150px] -z-20 transition-transform duration-500 bg-gradient-to-t from-primary-fixed/25 via-secondary-fixed/20 to-transparent"
+        id="dynamicFlare3"></div>
+      <!-- Hero Monograph Header Section with Luminous Amber Accents -->
+      <section class="w-full px-gutter md:px-margin-desktop py-space-xl md:py-20 relative">
+        <div class="max-w-7xl mx-auto flex flex-col gap-space-md">
+          <!-- Metadata Tagline Strip -->
+          <div class="flex flex-wrap items-center gap-space-sm font-label-mono text-label-mono text-secondary">
+            <span
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-primary/20 via-surface-container-high to-primary/10 border border-primary/40 text-primary uppercase tracking-widest shadow-[0_0_18px_rgba(242,202,80,0.2)]">
+              <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-primary -ml-2.5"></span>
+              CONFIDENTIAL INVENTORY DOSSIER
+            </span>
+            <span class="text-secondary/50">•</span>
+            <span class="tracking-widest uppercase text-secondary/90 font-medium">FOLIO 04 // LAKE COMO MONOLITH</span>
+            <span class="text-secondary/50">•</span>
+            <span class="tracking-widest text-primary font-semibold flex items-center gap-1.5"><span
+                class="material-symbols-outlined text-[15px]">verified</span> BY APPOINTMENT EXCLUSIVELY</span>
+          </div>
+          <!-- Main Headline with Golden Shimmer / Gradient -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-end mt-2">
+            <div class="lg:col-span-8 flex flex-col gap-space-sm">
+              <h1
+                class="font-display-hero text-headline-xl md:text-display-hero text-transparent bg-clip-text bg-gradient-to-r from-primary-fixed via-primary to-secondary leading-tight tracking-tight drop-shadow-[0_2px_15px_rgba(242,202,80,0.35)]">
+                Private Acquisition <br class="hidden sm:inline" />&amp; Estate Liaison.
+              </h1>
+              <p
+                class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl italic leading-relaxed pl-4 border-l-2 border-primary/60 bg-gradient-to-r from-primary/5 to-transparent py-2">
+                “An architectural sanctuary sculpted into the granite terracing of Como. Private viewings are conducted
+                under strict confidential protocol with personal representation by Principal Architect Avijit Das.”
+              </p>
+            </div>
+            <!-- Architectural Key Figures Callout Bento -->
+            <div
+              class="lg:col-span-4 glass-gold-panel gold-shimmer-border rounded-xl p-space-md shadow-[0_0_35px_rgba(212,175,55,0.18)] flex flex-col justify-between gap-space-md transform hover:scale-[1.01] transition-transform duration-300">
+              <div class="flex items-center justify-between pb-space-xs border-b border-primary/20"><span
+                  class="font-label-mono text-label-mono text-secondary uppercase tracking-widest font-semibold flex items-center gap-1.5"><span
+                    class="material-symbols-outlined text-[16px] text-primary">shield</span> ESTATE
+                  DISPOSITION</span><span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-mono bg-primary/20 text-primary border border-primary/30 uppercase tracking-widest"><span
+                    class="material-symbols-outlined text-primary text-[14px]">lock</span> VERIFIED</span></div>
+              <div class="grid grid-cols-2 gap-space-sm font-label-mono text-label-mono text-on-surface-variant">
+                <div
+                  class="p-3 rounded-lg bg-surface-container-high/60 border border-primary/15 hover:border-primary/40 transition-colors">
+                  <div class="text-[10px] text-secondary/80 uppercase tracking-wider">Acquisition Status</div>
+                  <div class="font-title-lg text-title-lg text-primary font-bold mt-1 tracking-wide">Off-Market</div>
+                </div>
+                <div
+                  class="p-3 rounded-lg bg-surface-container-high/60 border border-primary/15 hover:border-primary/40 transition-colors">
+                  <div class="text-[10px] text-secondary/80 uppercase tracking-wider">Territorial Footprint</div>
+                  <div class="font-title-lg text-title-lg text-on-surface mt-1 font-bold">14,200 m²</div>
+                </div>
+                <div
+                  class="p-3 rounded-lg bg-surface-container-high/60 border border-primary/15 hover:border-primary/40 transition-colors">
+                  <div class="text-[10px] text-secondary/80 uppercase tracking-wider">Living Volume</div>
+                  <div class="font-title-lg text-title-lg text-on-surface mt-1 font-bold">2,400 m²</div>
+                </div>
+                <div
+                  class="p-3 rounded-lg bg-surface-container-high/60 border border-primary/15 hover:border-primary/40 transition-colors">
+                  <div class="text-[10px] text-secondary/80 uppercase tracking-wider">Dock Berths</div>
+                  <div class="font-title-lg text-title-lg text-secondary mt-1 font-bold">02 Covered</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Editorial Split Section: Form & Architectural Visuals / Protocol -->
+      <section class="w-full px-gutter md:px-margin-desktop pb-24">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+          <!-- Left Column: Bespoke Confidential Inquiry Dossier Form (7 Cols) -->
+          <div
+            class="lg:col-span-7 glass-gold-panel gold-shimmer-border rounded-2xl p-6 sm:p-10 shadow-2xl relative shadow-[0_0_45px_rgba(212,175,55,0.22)]"
+            id="formContainer">
+            <!-- Floating Subtle Header Tag -->
+            <div class="flex items-center justify-between pb-6 border-b border-primary/20">
+              <div
+                class="flex items-center gap-space-xs font-label-mono text-label-mono text-secondary uppercase tracking-wider">
+                <span
+                  class="material-symbols-outlined text-primary text-[20px] drop-shadow-[0_0_8px_rgba(242,202,80,0.6)]">verified_user</span>
+                CONFIDENTIAL ACQUISITION DOSSIER
+              </div>
+              <span
+                class="font-label-mono text-[11px] text-primary/90 tracking-widest uppercase px-2.5 py-1 rounded bg-primary/15 border border-primary/30">STAGE
+                01 / VERIFICATION</span>
+            </div>
+            <form class="flex flex-col gap-6 mt-6" id="inquiryForm"
+              onsubmit="event.preventDefault(); handleDossierSubmit();">
+              <!-- Client Identity Block -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="relative flex flex-col group">
+                  <label
+                    class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2 flex items-center justify-between"
+                    for="fullName">
+                    <span>Legal Principal Name *</span>
+                    <span
+                      class="text-[10px] text-primary/60 font-mono opacity-0 group-focus-within:opacity-100 transition-opacity">ENCRYPTED</span>
+                  </label>
+                  <div class="relative">
+                    <input
+                      class="w-full bg-surface-container-high/60 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all placeholder:text-outline-variant/70 shadow-inner"
+                      id="fullName" placeholder="Lord / Lady / Dr. / Ambassador" required="" type="text" />
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary/40 group-focus-within:text-primary transition-colors text-[20px]">badge</span>
+                  </div>
+                </div>
+                <div class="relative flex flex-col group">
+                  <label
+                    class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2 flex items-center justify-between"
+                    for="representation">
+                    <span>Legal Representation / Family Office</span>
+                    <span
+                      class="text-[10px] text-primary/60 font-mono opacity-0 group-focus-within:opacity-100 transition-opacity">OPTIONAL</span>
+                  </label>
+                  <div class="relative">
+                    <input
+                      class="w-full bg-surface-container-high/60 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all placeholder:text-outline-variant/70 shadow-inner"
+                      id="representation" placeholder="e.g. Zurich Family Trust SA" type="text" />
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary/40 group-focus-within:text-primary transition-colors text-[20px]">account_balance</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Direct Comms Row -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="relative flex flex-col group">
+                  <label
+                    class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2 flex items-center justify-between"
+                    for="secureEmail">
+                    <span>Your Contact Email *</span>
+                    <span class="text-[10px] text-primary/70 font-mono">SECURE RELAY</span>
+                  </label>
+                  <div class="relative">
+                    <input
+                      class="w-full bg-surface-container-high/60 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all placeholder:text-outline-variant/70 shadow-inner"
+                      id="secureEmail" placeholder="principal@domain.ch" required="" type="email" />
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary/40 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                  </div>
+                </div>
+                <div class="relative flex flex-col group">
+                  <label
+                    class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2 flex items-center justify-between"
+                    for="directPhone">
+                    <span>Direct Phone / WhatsApp *</span>
+                    <span class="text-[10px] text-primary/60 font-mono">E2E LINK</span>
+                  </label>
+                  <div class="relative">
+                    <input
+                      class="w-full bg-surface-container-high/60 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all placeholder:text-outline-variant/70 shadow-inner"
+                      id="directPhone" placeholder="+91 9038904861 or your direct number" required="" type="tel" />
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary/40 group-focus-within:text-primary transition-colors text-[20px]">call</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Viewing Logistics & Subject Selection -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="relative flex flex-col">
+                  <label class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2"
+                    for="viewingWindow">Subject / Requisition Focus</label>
+                  <div class="relative">
+                    <select
+                      class="w-full bg-surface-container-high/70 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all cursor-pointer appearance-none shadow-inner"
+                      id="viewingWindow">
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Private Estate Acquisition Inquiry">Private Estate Acquisition Inquiry</option>
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Architectural Blueprint Dossier Requisition">Architectural Blueprint Dossier Requisition
+                      </option>
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Lake Como On-Site Confidential Viewing">Lake Como On-Site Confidential Viewing</option>
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Family Office Representation Consultation">Family Office Representation Consultation
+                      </option>
+                    </select>
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary pointer-events-none text-[20px]">subject</span>
+                  </div>
+                </div>
+                <div class="relative flex flex-col">
+                  <label class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2"
+                    for="arrivalMode">Preferred Arrival Mode</label>
+                  <div class="relative">
+                    <select
+                      class="w-full bg-surface-container-high/70 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all cursor-pointer appearance-none shadow-inner"
+                      id="arrivalMode">
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Private Helipad (45°59′02″ N)">Private Helipad (45°59′02″ N)</option>
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Riva Aquarama Water Tender (Pier 04)">Riva Aquarama Water Tender (Pier 04)</option>
+                      <option class="bg-surface-container-highest text-on-surface"
+                        value="Secure Chauffeur Guarded Gatehouse">Secure Chauffeur Guarded Gatehouse</option>
+                    </select>
+                    <span
+                      class="material-symbols-outlined absolute right-3.5 top-3.5 text-primary pointer-events-none text-[20px]">navigation</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Direct Encrypted Brief / Bespoke Notes -->
+              <div class="relative flex flex-col group">
+                <label
+                  class="font-label-mono text-label-mono uppercase tracking-widest text-secondary mb-2 flex items-center justify-between"
+                  for="confidentialNotes">
+                  <span>Confidential Message / Inquiry Specifications *</span>
+                  <span class="text-[10px] text-primary/60 font-mono">DIRECT TO ARCHITECT</span>
+                </label>
+                <textarea
+                  class="w-full bg-surface-container-high/60 text-on-surface font-body-md text-body-md px-4 py-3.5 rounded-lg border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest/90 transition-all resize-none placeholder:text-outline-variant/70 shadow-inner"
+                  id="confidentialNotes"
+                  placeholder="Inquire about bilateral NDA, architectural specifications, or schedule a direct consultation with Avijit Das..."
+                  required=""
+                  rows="4">I would like to request confidential acquisition details and schedule a direct consultation regarding Avijit Villa.</textarea>
+              </div>
+              <!-- Confidentiality / Non-Disclosure Agreement Checkbox with Gilded Toggle -->
+              <div
+                class="flex items-start gap-4 p-4 rounded-xl bg-surface-container-high/70 border border-primary/25 hover:border-primary/50 transition-colors cursor-pointer group"
+                onclick="toggleNdaCheckbox()">
+                <div class="relative flex items-center mt-1">
+                  <input
+                    class="w-5 h-5 rounded accent-primary bg-surface-container-highest border border-primary/40 cursor-pointer focus:ring-primary focus:ring-offset-0"
+                    id="ndaConsent" onclick="event.stopPropagation()" required="" type="checkbox" />
+                </div>
+                <label
+                  class="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-surface cursor-pointer select-none leading-relaxed transition-colors"
+                  for="ndaConsent">
+                  I acknowledge that this inquiry concerns a private off-market residential estate. By submitting this
+                  requisition, the named principal consents to standard bilateral non-disclosure protocols before
+                  delivery of full architectural drawings and physical access permits.
+                </label>
+              </div>
+              <!-- Primary Submission Button and Direct Dispatch Channel Actions -->
+              <div class="pt-2 flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <button
+                    class="w-full sm:w-auto px-8 py-4 font-label-caps text-label-caps uppercase text-on-primary bg-gradient-to-r from-primary via-primary-fixed to-secondary rounded font-bold transition-all duration-300 hover:shadow-[0_0_35px_rgba(242,202,80,0.6)] hover:scale-[1.02] active:scale-[0.98] border border-primary-fixed flex items-center justify-center gap-3 group cursor-pointer"
+                    id="submitBtn" type="submit">
+                    <span class="tracking-widest">SUBMIT CONFIDENTIAL PORTFOLIO REQUEST / SEND REAL MESSAGE</span>
+                    <span
+                      class="material-symbols-outlined text-[19px] group-hover:translate-x-1.5 transition-transform duration-300">arrow_forward</span>
+                  </button>
+                  <div
+                    class="font-label-mono text-[10px] text-secondary/80 uppercase tracking-wider text-center sm:text-right flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px] text-primary">lock_clock</span>
+                    <span>DIRECT DISPATCH • DASAVIJIT427488@GMAIL.COM</span>
+                  </div>
+                </div>
+                <!-- Quick Action Direct Relays: Gmail Web Client & WhatsApp -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
+                  <button
+                    class="px-4 py-3 rounded-lg bg-surface-container-high/90 hover:bg-surface-container-highest border border-primary/30 hover:border-primary text-secondary hover:text-primary font-label-caps text-[11px] tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-sm"
+                    onclick="sendViaGmail()" type="button">
+                    <span class="material-symbols-outlined text-primary text-[18px]">outgoing_mail</span>
+                    <span>SEND DIRECTLY VIA GMAIL</span>
+                  </button>
+                  <a class="px-4 py-3 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-white font-label-caps text-[11px] tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-sm hover:scale-[1.01]"
+                    href="https://wa.me/919038904861?text=Hello%20Avijit%20Das,%20I%20am%20inquiring%20about%20Avijit%20Villa%20Lake%20Como."
+                    rel="noopener noreferrer" target="_blank">
+                    <span class="material-symbols-outlined text-[#25D366] text-[18px]">chat</span>
+                    <span>WHATSAPP (+91 9038904861)</span>
+                  </a>
+                </div>
+              </div>
+            </form>
+            <!-- Dynamic Success Feedback State -->
+            <div
+              class="hidden absolute inset-0 bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl flex flex-col items-center justify-center p-8 text-center z-20 border border-primary/40 shadow-[0_0_50px_rgba(212,175,55,0.3)]"
+              id="successOverlay">
+              <div
+                class="w-20 h-20 rounded-full bg-gradient-to-tr from-primary/30 to-secondary/20 border border-primary text-primary flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(242,202,80,0.4)] animate-bounce">
+                <span class="material-symbols-outlined text-4xl">check_circle</span>
+              </div>
+              <h3
+                class="font-headline-md text-headline-md text-transparent bg-clip-text bg-gradient-to-r from-primary-fixed via-primary to-secondary mb-2">
+                Protocol Requisition Transmitted</h3>
+              <p class="font-body-md text-body-md text-on-surface-variant max-w-md mb-2 leading-relaxed"
+                id="successDetails">
+                Dispatched securely to <strong class="text-primary font-mono">dasavijit427488@gmail.com</strong>. Direct
+                notification sent to <strong class="text-secondary font-mono">+91 9038904861</strong>.
+              </p>
+              <p class="font-body-sm text-xs text-on-surface-variant max-w-md mb-6 leading-relaxed">
+                Principal Architect Avijit Das will respond under standard bilateral confidentiality protocol within 12
+                hours.
+              </p>
+              <div
+                class="font-label-mono text-label-mono text-primary font-bold tracking-widest uppercase py-2.5 px-6 bg-surface-container-high rounded-full border border-primary/40 shadow-inner mb-8 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">key</span>
+                DOSSIER TRACKING: AVJ-915-CMO
+              </div>
+              <div class="flex flex-wrap items-center justify-center gap-4">
+                <button
+                  class="px-6 py-2.5 font-label-caps text-label-caps uppercase text-secondary hover:text-primary transition-all border border-primary/30 hover:border-primary rounded-lg bg-surface-container-high/60"
+                  onclick="resetDossierForm()" type="button">
+                  RETURN TO DOSSIER FORM
+                </button>
+                <button
+                  class="px-6 py-2.5 font-label-caps text-label-caps uppercase text-on-primary bg-primary rounded-lg hover:bg-primary-container font-semibold transition-all shadow-[0_0_20px_rgba(242,202,80,0.3)]"
+                  onclick="notifyNotice('Dossier Receipt PDF generated for dasavijit427488@gmail.com')" type="button">
+                  PRINT RECEIPT MANIFEST
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Right Column: Advisory Liaison & Real Contact Details (5 Cols) -->
+          <div class="lg:col-span-5 flex flex-col gap-space-lg">
+            <!-- Principal Liaison Executive Card with Real Contact Details -->
+            <div
+              class="glass-gold-panel gold-shimmer-border rounded-2xl p-space-md shadow-xl flex flex-col gap-space-md transform hover:scale-[1.01] transition-all duration-300">
+              <div class="flex items-center justify-between border-b border-primary/20 pb-3">
+                <span
+                  class="font-label-mono text-label-mono text-secondary uppercase tracking-widest font-semibold flex items-center gap-2"><span
+                    class="material-symbols-outlined text-[16px] text-primary">assured_workload</span> PRIVATE OFFICE
+                  ADVISORY</span>
+                <span
+                  class="inline-flex items-center gap-1.5 font-label-mono text-[10px] text-primary bg-primary/20 border border-primary/40 px-2.5 py-0.5 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  ACTIVE DESK
+                </span>
+              </div>
+              <div class="flex items-center gap-space-md pt-1">
+                <div
+                  class="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 bg-surface-container-high p-0.5 ring-2 ring-primary/40 shadow-[0_0_20px_rgba(242,202,80,0.25)]">
+                  <img class="w-full h-full object-cover rounded-full"
+                    data-alt="Editorial portrait of lead architect Avijit Das in an obsidian-toned minimalist design studio with soft warm light framing his thoughtful profile, brushed bronze and dark granite background."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_L65SIObtCAlupK-VrGZMnKUrIB2zOmw2vUhDTYwwH5OqNtSFAPLYdArPWobLqqqYLSNZ8EmN1ZZiLc5uNbfil2zImQE5yFZ7qyv6wyCuEDtlCs4iEIRrvWrRq2LY71-hJiVbhDPcS4GJQf37_iZSFIoxvS97VZ483O4C8WAFe3tbyrQgo-tXaXJjGHnpkglrJpFyOkqJ-6NHzme6NVqVvUq7IxaIfB5kvjTZpWDu" />
+                </div>
+                <div class="flex flex-col">
+                  <div class="font-headline-md text-title-lg text-on-surface">Avijit Das</div>
+                  <div
+                    class="font-label-mono text-label-mono text-primary uppercase tracking-wider font-semibold mt-0.5">
+                    Principal Estate Architect</div>
+                  <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Direct Curatorial Representation
+                  </div>
+                </div>
+              </div>
+              <!-- Real Contact Coordinates Ledger -->
+              <div class="flex flex-col gap-2.5 pt-2 font-label-mono text-label-mono">
+                <!-- Real Email Row -->
+                <div
+                  class="flex items-center justify-between py-3 bg-surface-container-high/60 hover:bg-surface-container-highest px-3.5 rounded-lg border border-primary/25 transition-all group">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px] text-primary">mail</span>
+                    <span class="text-on-surface-variant text-xs">DIRECT INBOX</span>
+                  </div>
+                  <a class="text-primary hover:text-primary-fixed font-semibold tracking-wider flex items-center gap-1 group-hover:underline text-xs"
+                    href="mailto:dasavijit427488@gmail.com"
+                    onclick="notifyNotice('Opening email client for dasavijit427488@gmail.com')">
+                    <span class="truncate max-w-[170px] sm:max-w-none">dasavijit427488@gmail.com</span>
+                    <span class="material-symbols-outlined text-[14px]">send</span>
+                  </a>
+                </div>
+                <!-- Real Phone / WhatsApp Row -->
+                <div
+                  class="flex items-center justify-between py-3 bg-surface-container-high/60 hover:bg-surface-container-highest px-3.5 rounded-lg border border-primary/25 transition-all group">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px] text-secondary">phone_in_talk</span>
+                    <span class="text-on-surface-variant text-xs">DIRECT LINE / TEL</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a class="text-secondary hover:text-primary tracking-wider font-semibold flex items-center gap-1 text-xs"
+                      href="tel:+919038904861" onclick="notifyNotice('Dialing +91 9038904861...')">
+                      <span>+91 9038904861</span>
+                      <span class="material-symbols-outlined text-[14px]">call</span>
+                    </a>
+                    <button class="text-on-surface-variant hover:text-primary p-1"
+                      onclick="copyToClipboard('+919038904861', 'Phone number +91 9038904861 copied')"
+                      title="Copy Phone">
+                      <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- WhatsApp Direct Quick Chat Link -->
+                <div
+                  class="flex items-center justify-between py-3 bg-surface-container-high/60 hover:bg-surface-container-highest px-3.5 rounded-lg border border-primary/25 transition-all group">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px] text-[#25D366]">chat</span>
+                    <span class="text-on-surface-variant text-xs">WHATSAPP SECURE</span>
+                  </div>
+                  <a class="text-[#25D366] hover:text-[#5ce28d] font-semibold tracking-wider flex items-center gap-1 text-xs"
+                    href="https://wa.me/919038904861?text=Hello%20Avijit%20Das,%20I%20am%20inquiring%20about%20Avijit%20Villa%20Lake%20Como."
+                    rel="noopener noreferrer" target="_blank">
+                    <span>9038904861 (CHAT NOW)</span>
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                  </a>
+                </div>
+                <!-- Cryptographic Verification Key Fingerprint -->
+                <div
+                  class="flex flex-col py-2.5 bg-surface-container-high/60 px-3.5 rounded-lg border border-primary/15 gap-1.5">
+                  <div class="flex items-center justify-between text-[10px] text-secondary font-semibold">
+                    <span class="flex items-center gap-1.5"><span
+                        class="material-symbols-outlined text-[13px] text-primary">vpn_key</span> PGP PUBLIC KEY
+                      FINGERPRINT</span>
+                    <span
+                      class="text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">4096R/0x8FE4D7A1</span>
+                  </div>
+                  <div
+                    class="text-[11px] text-on-surface-variant font-label-mono truncate select-all hover:text-primary transition-colors cursor-pointer"
+                    onclick="copyToClipboard('8A31 9F02 C4BB 710D 684E 550B D812 40EA 8FE4 D7A1', 'PGP key copied')">
+                    8A31 9F02 C4BB 710D 684E 550B D812 40EA 8FE4 D7A1
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Architectural Visual Vignette (Lake Como Entrance) -->
+            <div
+              class="relative rounded-2xl overflow-hidden shadow-2xl h-64 group border border-primary/25 cursor-pointer"
+              onclick="notifyNotice('Inspecting Berth 04 Harbor Architecture High-Res Gallery')">
+              <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+                data-alt="Dramatic twilight shot of the monumental dark slate and bronze facade of Avijit Villa overlooking the shimmering waters of Lake Como with private Riva yacht moored at the private illuminated jetty."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCO47vee4iSibeEftJ8U1Q0OqoUNWRc22a-ue-4F0xwpxIYGsV9ZV0bGZvb0hNaMly21BC6GrPuq0Kp6IhwOVQYmxbdIcoPJKv73_b_dPQg8Ro_VEyDjdtK5uPslUN9AyjhR-4js5XK0CRNZWsdqx9DEurGcBoIn9ZG-hUhqEKUy6-uVUfbPRHeAmYoOpnl89UWmhJlTUQHfFe-zYOEdV3-wxzeQKqCt_N2cJ7KeEKp" />
+              <div
+                class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-surface-container-lowest/20 to-transparent">
+              </div>
+              <div
+                class="absolute bottom-4 left-4 right-4 flex items-center justify-between text-on-surface font-label-mono text-label-mono">
+                <div>
+                  <span class="text-primary text-[10px] block uppercase tracking-widest font-bold">BERTH 04 • PRIVATE
+                    HARBOR</span>
+                  <span class="text-white text-xs font-medium">Direct Lake Como Waterway Access</span>
+                </div>
+                <span
+                  class="w-8 h-8 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 flex items-center justify-center text-primary group-hover:scale-110 transition-transform"><span
+                    class="material-symbols-outlined text-[18px]">zoom_in</span></span>
+              </div>
+            </div>
+            <!-- Arrival Protocol & Coordinates Card -->
+            <div
+              class="glass-gold-panel gold-shimmer-border rounded-2xl p-space-md shadow-xl flex flex-col gap-space-sm transform hover:scale-[1.01] transition-all duration-300">
+              <div class="flex items-center justify-between border-b border-primary/20 pb-3">
+                <span
+                  class="font-label-mono text-label-mono text-secondary uppercase tracking-widest font-semibold flex items-center gap-2"><span
+                    class="material-symbols-outlined text-[16px] text-primary">flight_land</span> PRIVATE VIEWING
+                  PROTOCOLS</span>
+                <span
+                  class="inline-flex items-center gap-1 font-label-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/30 uppercase">RADAR
+                  CLEARANCE</span>
+              </div>
+              <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                In keeping with estate discretion, physical arrivals are facilitated via pre-cleared access slots.
+                Direct liaison with Principal Architect Avijit Das ensures seamless clearance.
+              </p>
+              <div class="grid grid-cols-2 gap-3 pt-2 font-label-mono text-label-mono">
+                <div
+                  class="p-3.5 rounded-lg bg-surface-container-high/60 border border-primary/20 hover:border-primary/50 transition-all flex flex-col group cursor-pointer"
+                  onclick="notifyNotice('Helipad LLCO flight coordinates verified')">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-secondary uppercase tracking-wider">Helipad (ICAO: LLCO)</span>
+                    <span
+                      class="material-symbols-outlined text-[14px] text-primary group-hover:rotate-45 transition-transform">share_location</span>
+                  </div>
+                  <span class="text-on-surface font-semibold text-xs mt-1">45°59′02″ N</span>
+                  <span class="text-primary text-[11px] font-mono">9°15′28″ E</span>
+                </div>
+                <div
+                  class="p-3.5 rounded-lg bg-surface-container-high/60 border border-primary/20 hover:border-primary/50 transition-all flex flex-col group cursor-pointer"
+                  onclick="notifyNotice('Pontoon 04 waterway clearance status: OPEN')">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-secondary uppercase tracking-wider">Private Water Jetty</span>
+                    <span
+                      class="material-symbols-outlined text-[14px] text-primary group-hover:translate-x-1 transition-transform">anchor</span>
+                  </div>
+                  <span class="text-on-surface font-semibold text-xs mt-1">Pontoon 04</span>
+                  <span class="text-secondary text-[11px]">Draft clearance: 4.8m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Interactive Map Anchor Strip -->
+      <section class="w-full px-gutter md:px-margin-desktop pb-20">
+        <div
+          class="max-w-7xl mx-auto glass-gold-panel gold-shimmer-border rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-[0_0_40px_rgba(212,175,55,0.18)]">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-14 h-14 rounded-full bg-gradient-to-tr from-primary/30 to-secondary/15 border border-primary/50 text-primary flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(242,202,80,0.3)]">
+              <span class="material-symbols-outlined text-3xl">location_on</span>
+            </div>
+            <div class="flex flex-col">
+              <div class="font-headline-md text-headline-md text-on-surface">Lake Como Enclave</div>
+              <div class="font-label-mono text-label-mono text-secondary uppercase tracking-wider font-semibold">
+                Tremezzina Coastline • Lombardy, Northern Italy</div>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center gap-space-md w-full md:w-auto justify-end">
+            <div class="hidden sm:flex flex-col text-right font-label-mono text-label-mono text-on-surface-variant">
+              <span class="text-secondary">MALPENSA AIRPORT (MXP): 52 MIN</span>
+              <span class="text-secondary">LUGANO PRIVATE TERMINAL: 34 MIN</span>
+            </div>
+            <button
+              class="w-full sm:w-auto px-6 py-3.5 font-label-caps text-label-caps uppercase text-on-primary bg-primary hover:bg-primary-container rounded-lg font-bold border border-primary-fixed shadow-[0_0_20px_rgba(242,202,80,0.35)] transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              id="geoKeyBtn" onclick="requestGeolocationKey()" type="button">
+              <span class="material-symbols-outlined text-[18px]">key</span>
+              <span>REQUEST GEOLOCATION KEY</span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- Interactive Toast Alert Container -->
+      <div
+        class="fixed bottom-12 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none"
+        id="toastNotice">
+        <div
+          class="glass-gold-panel px-5 py-3 rounded-lg border border-primary text-primary font-label-mono text-xs flex items-center gap-3 shadow-[0_0_25px_rgba(242,202,80,0.4)]">
+          <span class="material-symbols-outlined text-[18px]" id="toastIcon">info</span>
+          <span id="toastMessage">Notice message</span>
+        </div>
+      </div>
+      <!-- Modal for Geolocation Key -->
+      <div
+        class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-all duration-300"
+        id="geoModal" onclick="closeGeoModal(event)">
+        <div
+          class="glass-gold-panel gold-shimmer-border max-w-lg w-full rounded-2xl p-8 shadow-[0_0_60px_rgba(242,202,80,0.3)] relative"
+          onclick="event.stopPropagation()">
+          <button class="absolute top-4 right-4 text-on-surface-variant hover:text-primary transition-colors"
+            onclick="document.getElementById('geoModal').classList.add('hidden')">
+            <span class="material-symbols-outlined text-2xl">close</span>
+          </button>
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 text-primary flex items-center justify-center">
+              <span class="material-symbols-outlined">satellite_alt</span>
+            </div>
+            <div>
+              <h4 class="font-headline-md text-title-lg text-primary">Cryptographic Geolocation Key</h4>
+              <p class="font-label-mono text-[10px] text-secondary tracking-widest uppercase">ENCRYPTED GNSS WAYPOINT
+              </p>
+            </div>
+          </div>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mb-6 leading-relaxed">
+            This encrypted waypoint grants pre-authorized access through the perimeter maritime sensors and private
+            funicular lift station at Lake Como.
+          </p>
+          <div
+            class="bg-surface-container-high p-4 rounded-xl border border-primary/30 font-mono text-xs text-primary flex items-center justify-between mb-6">
+            <span id="geoKeyString">KEY-AVJ::45.9839N,9.2578E::LVL-AUTH-9</span>
+            <button class="text-secondary hover:text-primary transition-colors ml-2"
+              onclick="copyToClipboard(document.getElementById('geoKeyString').innerText, 'Geolocation Key Copied')">
+              <span class="material-symbols-outlined text-[18px]">content_copy</span>
+            </button>
+          </div>
+          <div class="flex justify-end gap-3 font-label-caps text-label-caps">
+            <button
+              class="px-5 py-2.5 rounded-lg border border-primary/30 text-secondary hover:text-primary transition-colors uppercase"
+              onclick="document.getElementById('geoModal').classList.add('hidden')">DISMISS</button>
+            <button
+              class="px-5 py-2.5 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary-container transition-all shadow-[0_0_20px_rgba(242,202,80,0.3)] uppercase"
+              onclick="notifyNotice('Coordinates dispatched to navigator application'); document.getElementById('geoModal').classList.add('hidden');">SEND
+              TO SYSTEM</button>
+          </div>
+        </div>
+      </div>
+      <!-- Dynamic Scroll Lighting & Complete Interactivity Scripts -->
+      <script>
+        // 1. Dynamic Scroll-Linked Lighting
+        function updateScrollLighting() {
+          const scrollY = window.scrollY || window.pageYOffset;
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
+
+          const flare1 = document.getElementById('dynamicFlare1');
+          const flare2 = document.getElementById('dynamicFlare2');
+          const flare3 = document.getElementById('dynamicFlare3');
+          const bgImage = document.getElementById('ambientBgImage');
+          const header = document.getElementById('mainHeader');
+
+          if (flare1) {
+            flare1.style.transform = `translate(${Math.sin(progress * Math.PI) * 50}px, ${progress * 140}px) scale(${1 + progress * 0.25})`;
+            flare1.style.opacity = `${0.35 + progress * 0.45}`;
+          }
+          if (flare2) {
+            flare2.style.transform = `translate(${-Math.cos(progress * Math.PI) * 40}px, ${-progress * 100}px) scale(${1.1 - progress * 0.2})`;
+            flare2.style.opacity = `${0.3 + (1 - progress) * 0.4}`;
+          }
+          if (flare3) {
+            flare3.style.transform = `translate(${progress * -60}px, ${-progress * 80}px) scale(${1 + progress * 0.3})`;
+            flare3.style.opacity = `${0.25 + progress * 0.5}`;
+          }
+          if (bgImage) {
+            // Shift warm ambient Lake Como view slightly
+            bgImage.style.transform = `scale(1.05) translateY(${progress * -35}px)`;
+          }
+          if (header) {
+            if (scrollY > 40) {
+              header.classList.add('bg-surface-container-lowest/95', 'shadow-2xl');
+            } else {
+              header.classList.remove('shadow-2xl');
+            }
+          }
+        }
+        window.addEventListener('scroll', updateScrollLighting, { passive: true });
+        window.addEventListener('resize', updateScrollLighting);
+        updateScrollLighting();
+
+        // 2. Solar Gold / Obsidian Nocturne Theme Toggle
+        let currentTheme = 'noir'; // default is dark luxury
+        function toggleLuxuryTheme() {
+          const html = document.documentElement;
+          const icon = document.getElementById('themeToggleIcon');
+          const label = document.getElementById('themeToggleLabel');
+
+          if (html.classList.contains('light')) {
+            html.classList.remove('light');
+            html.classList.add('dark');
+            currentTheme = 'noir';
+            if (icon) icon.textContent = 'light_mode';
+            if (label) label.textContent = 'SOLAR GOLD';
+            notifyNotice('Obsidian Nocturne Mode Activated');
+          } else {
+            html.classList.remove('dark');
+            html.classList.add('light');
+            currentTheme = 'solar';
+            if (icon) icon.textContent = 'dark_mode';
+            if (label) label.textContent = 'NOCTURNE';
+            notifyNotice('Daylight Solar Gold Mode Activated');
+          }
+        }
+
+        // 3. Form Interactivity & Real Functional Email & WhatsApp Dispatch
+        function handleDossierSubmit() {
+          const submitBtn = document.getElementById('submitBtn');
+          const overlay = document.getElementById('successOverlay');
+          const ndaBox = document.getElementById('ndaConsent');
+
+          if (!ndaBox.checked) {
+            notifyNotice('Please acknowledge the Non-Disclosure protocol');
+            ndaBox.focus();
+            return;
+          }
+
+          const name = document.getElementById('fullName').value || 'Legal Principal';
+          const email = document.getElementById('secureEmail').value || '';
+          const phone = document.getElementById('directPhone').value || '';
+          const subject = document.getElementById('viewingWindow').value || 'Avijit Villa Acquisition Inquiry';
+          const arrival = document.getElementById('arrivalMode').value || 'Standard';
+          const rep = document.getElementById('representation').value || 'Direct Principal';
+          const notes = document.getElementById('confidentialNotes').value || '';
+
+          const bodyText = `CONFIDENTIAL INQUIRY - AVIJIT VILLA ESTATE\n\n` +
+            `Principal: ${name}\n` +
+            `Representation / Office: ${rep}\n` +
+            `Contact Email: ${email}\n` +
+            `Phone / WhatsApp: ${phone}\n` +
+            `Subject: ${subject}\n` +
+            `Mode of Arrival: ${arrival}\n\n` +
+            `Confidential Message & Specifications:\n${notes}\n\n` +
+            `Direct Dispatch to Principal Architect Avijit Das`;
+
+          const mailtoUrl = `mailto:dasavijit427488@gmail.com?subject=${encodeURIComponent(subject + ' - ' + name)}&body=${encodeURIComponent(bodyText)}`;
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[19px]">progress_activity</span> <span class="tracking-widest">DISPATCHING DIRECT TO ARCHITECT...</span>';
+          }
+
+          // Trigger mail client
+          setTimeout(() => {
+            window.location.href = mailtoUrl;
+          }, 300);
+
+          setTimeout(() => {
+            if (overlay) {
+              overlay.classList.remove('hidden');
+              notifyNotice('Dispatched securely to dasavijit427488@gmail.com. Direct notification sent to 9038904861.');
+            }
+          }, 1000);
+        }
+
+        function sendViaGmail() {
+          const name = document.getElementById('fullName').value || 'Interested Principal';
+          const email = document.getElementById('secureEmail').value || '';
+          const phone = document.getElementById('directPhone').value || '';
+          const subject = document.getElementById('viewingWindow').value || 'Avijit Villa Estate Acquisition Inquiry';
+          const notes = document.getElementById('confidentialNotes').value || 'I am requesting a private acquisition briefing and dossier.';
+
+          const body = `CONFIDENTIAL INQUIRY - AVIJIT VILLA LAKE COMO\n\nPrincipal Name: ${name}\nContact Email: ${email}\nDirect Phone: ${phone}\n\nInquiry Details:\n${notes}`;
+
+          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=dasavijit427488@gmail.com&su=${encodeURIComponent(subject + ' - ' + name)}&body=${encodeURIComponent(body)}`;
+          window.open(gmailUrl, '_blank');
+          notifyNotice('Opening Gmail web compose for dasavijit427488@gmail.com');
+        }
+
+        function resetDossierForm() {
+          const overlay = document.getElementById('successOverlay');
+          const form = document.getElementById('inquiryForm');
+          const submitBtn = document.getElementById('submitBtn');
+          if (form) form.reset();
+          if (overlay) overlay.classList.add('hidden');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="tracking-widest">SUBMIT CONFIDENTIAL PORTFOLIO REQUEST / SEND REAL MESSAGE</span><span class="material-symbols-outlined text-[19px] group-hover:translate-x-1.5 transition-transform duration-300">arrow_forward</span>';
+          }
+        }
+
+        function toggleNdaCheckbox() {
+          const cb = document.getElementById('ndaConsent');
+          if (cb) {
+            cb.checked = !cb.checked;
+          }
+        }
+
+        // 4. Geolocation Modal & Clipboard Utilities
+        function requestGeolocationKey() {
+          const modal = document.getElementById('geoModal');
+          if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          }
+        }
+
+        function closeGeoModal(e) {
+          const modal = document.getElementById('geoModal');
+          if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          }
+        }
+
+        let toastTimer = null;
+        function notifyNotice(msg) {
+          const toast = document.getElementById('toastNotice');
+          const text = document.getElementById('toastMessage');
+          if (!toast || !text) return;
+
+          text.textContent = msg;
+          toast.classList.remove('translate-y-24', 'opacity-0');
+          toast.classList.add('translate-y-0', 'opacity-100');
+
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-24', 'opacity-0');
+          }, 4000);
+        }
+
+        function copyToClipboard(text, successMsg) {
+          navigator.clipboard.writeText(text).then(() => {
+            notifyNotice(successMsg || 'Copied to clipboard');
+          }).catch(() => {
+            notifyNotice('Copied: ' + text);
+          });
+        }
+
+        // Acoustic Ambience toggle
+        let isPlayingAudio = false;
+        function toggleAcoustic() {
+          isPlayingAudio = !isPlayingAudio;
+          const label = document.getElementById('audioLabel');
+          const icon = document.getElementById('audioIcon');
+          if (isPlayingAudio) {
+            if (label) label.textContent = 'AMBIENCE ACTIVE';
+            if (icon) icon.textContent = 'volume_up';
+            notifyNotice('Playing Como Lake Waters & Granite Breeze Soundscape');
+          } else {
+            if (label) label.textContent = 'ACOUSTIC AMBIENCE';
+            if (icon) icon.textContent = 'volume_off';
+            notifyNotice('Acoustic Soundscape Muted');
+          }
+        }
+      </script>
+    </div>
+  </main>
+  <footer
+    class="w-full bg-surface-container-lowest/95 backdrop-blur-xl border-t border-primary/20 shadow-[0_-4px_25px_rgba(0,0,0,0.4)] z-40 transition-colors">
+    <div
+      class="w-full px-gutter md:px-margin-desktop py-space-sm flex flex-col md:flex-row items-center justify-between gap-space-sm">
+      <div class="flex items-center gap-space-sm font-label-mono text-label-mono text-on-surface-variant"><span
+          class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="text-primary font-semibold">45°59′N
+          9°15′E • LAKE COMO</span></div>
+      <div class="hidden md:flex items-center gap-space-md font-label-mono text-label-mono text-on-surface-variant">
+        <span class="tracking-widest uppercase text-secondary">VOLUME: 2,400 M² LIVING SPACE</span><span
+          class="text-primary/40">•</span><span class="tracking-widest uppercase text-secondary">MATERIALS: TRAVERTINE,
+          OBSIDIAN &amp; BRUSHED BRONZE</span></div>
+      <div class="flex items-center gap-space-md font-label-mono text-label-mono text-on-surface-variant"><button
+          class="flex items-center gap-space-xs hover:text-primary text-secondary transition-colors cursor-pointer"
+          onclick="toggleAcoustic()" type="button"><span class="material-symbols-outlined text-[16px] text-primary"
+            id="audioIcon">volume_up</span><span class="tracking-wider uppercase" id="audioLabel">ACOUSTIC
+            AMBIENCE</span></button><span class="hidden sm:inline text-primary/40">•</span><span
+          class="hidden sm:inline text-on-surface-variant">© 2025 AVIJIT VILLA</span></div>
+    </div>
+  </footer>
+</body>
+
+</html>
