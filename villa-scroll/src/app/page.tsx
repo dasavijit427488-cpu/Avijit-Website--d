@@ -7,14 +7,13 @@ import HeroOverlay from "@/components/HeroOverlay";
 import InteriorOverlays from "@/components/InteriorOverlays";
 import FloatingNav from "@/components/FloatingNav";
 import VisualEffects from "@/components/VisualEffects";
+import MarbleScrollBackdrop from "@/components/MarbleScrollBackdrop";
+import MaterialitySection from "@/components/MaterialitySection";
+import FloorplanExplorer from "@/components/FloorplanExplorer";
+import ContactSection from "@/components/ContactSection";
 import { useSiteConfig } from "@/context/SiteConfigContext";
 import type { SitePageId } from "@/lib/defaultSiteConfig";
 
-// Code-split below-the-fold heavy sections so initial opening loads in milliseconds
-const MarbleScrollBackdrop = dynamic(() => import("@/components/MarbleScrollBackdrop"));
-const MaterialitySection = dynamic(() => import("@/components/MaterialitySection"));
-const FloorplanExplorer = dynamic(() => import("@/components/FloorplanExplorer"));
-const ContactSection = dynamic(() => import("@/components/ContactSection"));
 const InquiryModal = dynamic(() => import("@/components/InquiryModal"), { ssr: false });
 
 const TOTAL_FRAMES = 240;

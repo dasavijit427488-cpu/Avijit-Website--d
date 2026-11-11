@@ -191,112 +191,112 @@ export default function MarbleScrollBackdrop({
 
         {/* Fast-Spinning New 3D Geometric & Sculptural Objects */}
         {show3dObjects && (
-        <div
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-          style={{ perspective: "1100px", transformStyle: "preserve-3d" }}
-        >
-          {FAST_3D_SCULPTURES.map((obj, idx) => (
-            <div
-              key={obj.id}
-              ref={(el) => {
-                objRefs.current[idx] = el;
-              }}
-              style={{
-                left: obj.baseX,
-                top: obj.baseY,
-                width: obj.size,
-                height: obj.size,
-                transformStyle: "preserve-3d",
-              }}
-              className={`absolute will-change-transform scale-75 sm:scale-100 ${obj.mobileHide ? "hidden md:block" : "block opacity-80 sm:opacity-100"}`}
-            >
-              {/* 1. 3D Faceted Gold & Ivory Cut Diamond Prism */}
-              {obj.kind === "diamond" && (
-                <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
-                  <div
-                    className="w-16 h-16 rotate-45 border-2 border-[#fff7dc]/90 rounded-sm"
-                    style={{
-                      background: "linear-gradient(135deg, #fff6d1 0%, #e6be4a 45%, #7c580f 100%)",
-                      boxShadow: "0 14px 32px rgba(139,105,20,0.34)",
-                      transform: "rotateY(30deg) rotateZ(45deg)",
-                    }}
-                  />
-                  <div
-                    className="absolute w-16 h-16 rotate-45 border-2 border-[#c9a84c]/90 rounded-sm"
-                    style={{
-                      background: "linear-gradient(225deg, #3c2c12/80 0%, #b58b28/75 55%, #f7e3a4/90 100%)",
-                      transform: "rotateY(-60deg) rotateZ(45deg)",
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* 2. 3D Celestial Architectural Sunburst Compass */}
-              {obj.kind === "compass" && (
-                <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
-                  <div className="absolute inset-1 rounded-full border-[3px] border-[#9e7216]/90" />
-                  <div
-                    className="absolute inset-4 rounded-full border-[3px] border-[#2e2313]/80"
-                    style={{ transform: "rotateX(70deg)" }}
-                  />
-                  <div
-                    className="absolute w-full h-[3px] bg-gradient-to-r from-transparent via-[#b58b28] to-transparent"
-                    style={{ transform: "translateZ(8px)" }}
-                  />
-                  <div
-                    className="absolute h-full w-[3px] bg-gradient-to-b from-transparent via-[#b58b28] to-transparent"
-                    style={{ transform: "rotateY(45deg)" }}
-                  />
-                  <div
-                    className="w-6 h-6 rotate-45 border border-[#fff7dc]"
-                    style={{
-                      background: "radial-gradient(circle, #fff8d6 0%, #c9a84c 70%, #684b0e 100%)",
-                      transform: "translateZ(14px) rotate(45deg)",
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* 3. 3D Double-Ribbon Gold Infinity Helix */}
-              {obj.kind === "helix" && (
-                <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
-                  {[0, 45, 90, 135].map((angle) => (
+          <div
+            className="absolute inset-0 overflow-hidden pointer-events-none"
+            style={{ perspective: "1100px", transformStyle: "preserve-3d" }}
+          >
+            {FAST_3D_SCULPTURES.map((obj, idx) => (
+              <div
+                key={obj.id}
+                ref={(el) => {
+                  objRefs.current[idx] = el;
+                }}
+                style={{
+                  left: obj.baseX,
+                  top: obj.baseY,
+                  width: obj.size,
+                  height: obj.size,
+                  transformStyle: "preserve-3d",
+                }}
+                className={`absolute will-change-transform scale-75 sm:scale-100 ${obj.mobileHide ? "hidden md:block" : "block opacity-80 sm:opacity-100"}`}
+              >
+                {/* 1. 3D Faceted Gold & Ivory Cut Diamond Prism */}
+                {obj.kind === "diamond" && (
+                  <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
                     <div
-                      key={angle}
-                      className="absolute inset-2 rounded-2xl border-[3px] border-[#b58b28]/85"
+                      className="w-16 h-16 rotate-45 border-2 border-[#fff7dc]/90 rounded-sm"
                       style={{
-                        transform: `rotateX(${angle}deg) rotateY(${angle * 0.7}deg)`,
+                        background: "linear-gradient(135deg, #fff6d1 0%, #e6be4a 45%, #7c580f 100%)",
+                        boxShadow: "0 14px 32px rgba(139,105,20,0.34)",
+                        transform: "rotateY(30deg) rotateZ(45deg)",
                       }}
                     />
-                  ))}
-                  <div
-                    className="w-7 h-7 rounded-full border border-[#fff3c4]"
-                    style={{
-                      background: "radial-gradient(circle at 30% 30%, #ffffff 0%, #d4af37 55%, #543d09 100%)",
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* 4. 3D Interlocking Golden Architectural Chevrons */}
-              {obj.kind === "chevron" && (
-                <div className="relative w-full h-full flex flex-col items-center justify-center gap-2" style={{ transformStyle: "preserve-3d" }}>
-                  {[0, 1, 2].map((i) => (
                     <div
-                      key={i}
-                      className="w-16 h-5 rounded-md border border-[#fff4cc]/85"
+                      className="absolute w-16 h-16 rotate-45 border-2 border-[#c9a84c]/90 rounded-sm"
                       style={{
-                        background: "linear-gradient(90deg, #4b3815 0%, #d4af37 50%, #fce694 100%)",
-                        transform: `translateZ(${(i - 1) * 18}px) rotateY(${i * 25}deg) skewX(-18deg)`,
-                        boxShadow: "0 10px 22px rgba(105,76,12,0.28)",
+                        background: "linear-gradient(225deg, #3c2c12/80 0%, #b58b28/75 55%, #f7e3a4/90 100%)",
+                        transform: "rotateY(-60deg) rotateZ(45deg)",
                       }}
                     />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                  </div>
+                )}
+
+                {/* 2. 3D Celestial Architectural Sunburst Compass */}
+                {obj.kind === "compass" && (
+                  <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
+                    <div className="absolute inset-1 rounded-full border-[3px] border-[#9e7216]/90" />
+                    <div
+                      className="absolute inset-4 rounded-full border-[3px] border-[#2e2313]/80"
+                      style={{ transform: "rotateX(70deg)" }}
+                    />
+                    <div
+                      className="absolute w-full h-[3px] bg-gradient-to-r from-transparent via-[#b58b28] to-transparent"
+                      style={{ transform: "translateZ(8px)" }}
+                    />
+                    <div
+                      className="absolute h-full w-[3px] bg-gradient-to-b from-transparent via-[#b58b28] to-transparent"
+                      style={{ transform: "rotateY(45deg)" }}
+                    />
+                    <div
+                      className="w-6 h-6 rotate-45 border border-[#fff7dc]"
+                      style={{
+                        background: "radial-gradient(circle, #fff8d6 0%, #c9a84c 70%, #684b0e 100%)",
+                        transform: "translateZ(14px) rotate(45deg)",
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* 3. 3D Double-Ribbon Gold Infinity Helix */}
+                {obj.kind === "helix" && (
+                  <div className="relative w-full h-full flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
+                    {[0, 45, 90, 135].map((angle) => (
+                      <div
+                        key={angle}
+                        className="absolute inset-2 rounded-2xl border-[3px] border-[#b58b28]/85"
+                        style={{
+                          transform: `rotateX(${angle}deg) rotateY(${angle * 0.7}deg)`,
+                        }}
+                      />
+                    ))}
+                    <div
+                      className="w-7 h-7 rounded-full border border-[#fff3c4]"
+                      style={{
+                        background: "radial-gradient(circle at 30% 30%, #ffffff 0%, #d4af37 55%, #543d09 100%)",
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* 4. 3D Interlocking Golden Architectural Chevrons */}
+                {obj.kind === "chevron" && (
+                  <div className="relative w-full h-full flex flex-col items-center justify-center gap-2" style={{ transformStyle: "preserve-3d" }}>
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-16 h-5 rounded-md border border-[#fff4cc]/85"
+                        style={{
+                          background: "linear-gradient(90deg, #4b3815 0%, #d4af37 50%, #fce694 100%)",
+                          transform: `translateZ(${(i - 1) * 18}px) rotateY(${i * 25}deg) skewX(-18deg)`,
+                          boxShadow: "0 10px 22px rgba(105,76,12,0.28)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

@@ -146,7 +146,7 @@ export default function CanvasSequence({
   // VRAM safeguard: evicts & closes distant ImageBitmaps outside active window on both mobile & desktop
   const evictDistantFrames = useCallback((centerFrame: number) => {
     const total = activeTotalRef.current;
-    const keepRadius = isMobileRef.current ? 65 : 85;
+    const keepRadius = isMobileRef.current ? 75 : 110;
     for (let i = 1; i <= total; i++) {
       if (Math.abs(i - centerFrame) > keepRadius && imagesRef.current[i]) {
         const item = imagesRef.current[i];
@@ -168,18 +168,18 @@ export default function CanvasSequence({
       }
       if (isPendingMapRef.current[index]) return Promise.resolve(null);
 
-      // Cancel stale scroll-priority fetches >18 frames away so current scroll position never waits behind old requests
+      // Cancel stale scroll-priority fetches >22 frames away so current scroll position never waits behind old requests
       if (isPriority) {
         for (const [pendingIdx, ctrl] of priorityControllersRef.current.entries()) {
-          if (Math.abs(pendingIdx - currentTargetFrameRef.current) > 18) {
+          if (Math.abs(pendingIdx - currentTargetFrameRef.current) > 22) {
             ctrl.abort();
             priorityControllersRef.current.delete(pendingIdx);
           }
         }
       }
 
-      const maxBgConcurrent = isMobileRef.current ? 2 : 3;
-      const maxPriorityConcurrent = isMobileRef.current ? 4 : 5;
+      const maxBgConcurrent = isMobileRef.current ? 3 : 4;
+      const maxPriorityConcurrent = isMobileRef.current ? 6 : 8;
       if (!isPriority && bgInFlightRef.current >= maxBgConcurrent) {
         return Promise.resolve(null);
       }
@@ -261,7 +261,7 @@ export default function CanvasSequence({
 
       const total = activeTotalRef.current;
       const sign = dir >= 0 ? 1 : -1;
-      const lookAhead = isMobileRef.current ? 4 : 5;
+      const lookAhead = isMobileRef.current ? 8 : 12;
 
       for (let i = 1; i <= lookAhead; i++) {
         const idx = centerFrame + i * sign;
@@ -384,32 +384,8 @@ export default function CanvasSequence({
     isPendingMapRef.current = new Array(total + 1).fill(false);
 
     let isCancelled = false;
-    let triggerEarlyPreload: (() => void) | null = null;
 
     const runOctavePreload = async () => {
-      // Wait briefly for initial paint & hero controls unless the user scrolls/touches immediately
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(() => {
-          cleanup();
-          resolve();
-        }, 320);
-        const wakeup = () => {
-          clearTimeout(timer);
-          cleanup();
-          resolve();
-        };
-        const cleanup = () => {
-          window.removeEventListener("scroll", wakeup);
-          window.removeEventListener("touchstart", wakeup);
-          window.removeEventListener("wheel", wakeup);
-        };
-        triggerEarlyPreload = wakeup;
-        window.addEventListener("scroll", wakeup, { once: true, passive: true });
-        window.addEventListener("touchstart", wakeup, { once: true, passive: true });
-        window.addEventListener("wheel", wakeup, { once: true, passive: true });
-      });
-      if (isCancelled) return;
-
       const first = await loadImage(1, true);
       if (isCancelled) return;
       if (first) drawFrameImage(first, 1);
@@ -424,21 +400,21 @@ export default function CanvasSequence({
         }
       };
 
-      const openSlice = 6;
+      const openSlice = 14;
       for (let i = 1; i <= openSlice; i++) push(i);
-      const keyStep = Math.max(1, Math.floor(total / 16));
+      const keyStep = Math.max(1, Math.floor(total / 24));
       for (let i = 1; i <= total; i += keyStep) push(i);
       for (let i = 1; i <= total; i += 4) push(i);
       for (let i = 1; i <= total; i += 2) push(i);
       for (let i = 1; i <= total; i += 1) push(i);
 
-      const batchSize = isMob ? 2 : 3;
-      const pauseMs = isMob ? 32 : 28;
+      const batchSize = isMob ? 3 : 4;
+      const pauseMs = isMob ? 18 : 16;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        while (isScrollingRef.current && !isCancelled) {
-          await new Promise((r) => setTimeout(r, 120));
+        while (isScrollingRef.current && !isCancelled && i >= openSlice + 18) {
+          await new Promise((r) => setTimeout(r, 90));
         }
         if (isCancelled) return;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
@@ -451,7 +427,6 @@ export default function CanvasSequence({
 
     return () => {
       isCancelled = true;
-      if (triggerEarlyPreload) triggerEarlyPreload();
       for (const ctrl of controllers.values()) {
         ctrl.abort();
       }

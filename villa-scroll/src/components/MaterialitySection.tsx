@@ -137,7 +137,12 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
       }
     }, el);
 
+    const refreshRaf = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+
     return () => {
+      cancelAnimationFrame(refreshRaf);
       ctx.revert();
     };
   }, [anim?.enabled, anim?.speed, anim?.directionMode]);

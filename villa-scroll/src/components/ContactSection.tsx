@@ -127,7 +127,12 @@ export default function ContactSection() {
         }
       }, el);
 
+      const refreshRaf = requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
+
       return () => {
+        cancelAnimationFrame(refreshRaf);
         ctx.revert();
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       };
@@ -184,46 +189,6 @@ export default function ContactSection() {
       providerMessage = "Offline fallback ready.";
     }
 
-    // Browser-side real email relay if server SMTP/Resend wasn't configured yet on Vercel
-    if (!emailDispatched && c.ownerEmail) {
-      const isSameEmail = email.toLowerCase() === c.ownerEmail.toLowerCase();
-      try {
-        const fsRes = await fetch(
-          `https://formsubmit.co/ajax/${encodeURIComponent(c.ownerEmail)}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              name,
-              email,
-              message: requirement,
-              _subject: `New Inquiry — ${name}`,
-              ...(!isSameEmail ? { _replyto: email } : {}),
-              _template: "box",
-              "Customer Name": name,
-              "Customer Email": email,
-              "Client Requirement": requirement,
-            }),
-          }
-        );
-        const fsJson = await fsRes.json().catch(() => null);
-        if (
-          fsRes.ok &&
-          (fsJson?.success === true || fsJson?.success === "true")
-        ) {
-          emailDispatched = true;
-          providerMessage = `Delivered directly to ${c.ownerEmail}.`;
-        } else if (fsJson?.message && !providerMessage) {
-          providerMessage = String(fsJson.message);
-        }
-      } catch {
-        // Keep Gmail / Email app & WhatsApp fallback ready
-      }
-    }
-
     setSubmittedRelay({
       name,
       email,
@@ -238,8 +203,57 @@ export default function ContactSection() {
     notifyNotice(
       emailDispatched
         ? `Email delivered to ${c.ownerEmail}`
-        : `Inquiry saved & prepared for ${c.ownerEmail}`
+        : `Inquiry saved for ${c.ownerEmail}`
     );
+
+    // Non-blocking browser relay if direct SMTP/Resend isn't configured yet on Vercel
+    if (!emailDispatched && c.ownerEmail) {
+      const isSameEmail = email.toLowerCase() === c.ownerEmail.toLowerCase();
+      void fetch(
+        `https://formsubmit.co/ajax/${encodeURIComponent(c.ownerEmail)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            message: requirement,
+            _subject: `New Inquiry — ${name}`,
+            ...(!isSameEmail ? { _replyto: email } : {}),
+            _template: "box",
+            "Customer Name": name,
+            "Customer Email": email,
+            "Client Requirement": requirement,
+          }),
+        }
+      )
+        .then(async (fsRes) => {
+          const fsJson = await fsRes.json().catch(() => null);
+          if (fsRes.ok && (fsJson?.success === true || fsJson?.success === "true")) {
+            setSubmittedRelay((prev) =>
+              prev && prev.name === name && prev.email === email
+                ? {
+                    ...prev,
+                    emailDispatched: true,
+                    providerMessage: `Delivered directly to ${c.ownerEmail}.`,
+                  }
+                : prev
+            );
+          } else if (fsJson?.message) {
+            setSubmittedRelay((prev) =>
+              prev && prev.name === name && prev.email === email
+                ? { ...prev, providerMessage: String(fsJson.message) }
+                : prev
+            );
+          }
+        })
+        .catch(() => {
+          // Keep Open in Gmail / WhatsApp buttons active
+        });
+    }
   };
 
   const copyToClipboard = (text: string, successMsg: string) => {
@@ -728,6 +742,7 @@ export default function ContactSection() {
               <span className="text-[#c9a84c]/60">&bull;</span>
               <Link
                 href="/admin"
+                prefetch={true}
                 className="text-[11px] uppercase tracking-wider text-[#8b6914] hover:text-[#1c1812] font-semibold underline-offset-4 hover:underline transition-colors"
               >
                 Admin Portal

@@ -48,8 +48,12 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://avijitvilla.vercel.app"),
   title: "Avijit Villa | Luxury 3D Architectural Experience",
   description: "Bespoke architectural residence showcased through interactive 3D scroll canvas",
+  verification: {
+    google: "4cNcV9J0qgYAa9nLDHNlt8Yhn0du1ZjCu-9uD0u0hAo",
+  },
   icons: {
     icon: [
       { url: "/images/avijit-favicon.png?v=2", type: "image/png" },

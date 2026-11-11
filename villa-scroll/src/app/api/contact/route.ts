@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { getSiteConfigCloud, insertInquiryCloud } from "@/lib/db";
-import { sendRealEmail } from "@/lib/email";
+import { getSmtpCredentials, sendRealEmail } from "@/lib/email";
 
 function escapeHtml(text: string): string {
   return text
@@ -139,10 +139,6 @@ export async function POST(request: NextRequest) {
     const villaTitle = `${siteConfig.brand.brandFirstLetter}${siteConfig.brand.brandMiddleText} ${siteConfig.brand.brandLastWord}`;
     const footerLocation = siteConfig.contact.footerLocationText;
 
-    let emailDispatched = false;
-    let deliveryChannel: "smtp" | "resend" | "web3forms" | "formsubmit" | "manual" = "manual";
-    let providerMessage = "";
-
     const htmlBody = buildLuxuryHtmlEmail({
       villaTitle,
       footerLocation,
@@ -164,40 +160,46 @@ export async function POST(request: NextRequest) {
       `Location: ${footerLocation}`,
     ].join("\n");
 
-    // 1 & 2. Primary Real Email Delivery: Gmail SMTP / Resend / Web3Forms
-    const directRes = await sendRealEmail({
-      to: ownerEmail,
-      replyTo: `${name} <${email}>`,
-      subject: `New ${villaTitle} Inquiry — ${name}`,
-      text: plainBody,
-      html: htmlBody,
-      fromName: `${villaTitle} Concierge`,
+    const hasDirectMailer = Boolean(
+      (await getSmtpCredentials()).smtpPass ||
+        process.env.RESEND_API_KEY ||
+        process.env.WEB3FORMS_ACCESS_KEY
+    );
+
+    const origin =
+      request.headers.get("origin") ||
+      request.nextUrl.origin ||
+      "https://avijitvilla.vercel.app";
+    const referer = request.headers.get("referer") || `${origin}/`;
+    const isSameEmail = email.toLowerCase() === ownerEmail.toLowerCase();
+
+    // Persist inquiry immediately so the client gets an instant confirmation response
+    const inquiryId = await insertInquiryCloud({
+      source,
+      name,
+      email,
+      phone,
+      arrivalProtocol,
+      requirement,
+      emailDispatched: hasDirectMailer,
+      deliveryChannel: hasDirectMailer ? "smtp" : "formsubmit",
     });
 
-    if (directRes.dispatched) {
-      emailDispatched = true;
-      deliveryChannel =
-        directRes.channel === "resend"
-          ? "resend"
-          : directRes.channel === "web3forms"
-            ? "web3forms"
-            : "smtp";
-      providerMessage = directRes.message;
-    } else if (directRes.message && !directRes.message.includes("No server SMTP")) {
-      providerMessage = directRes.message;
-    }
-
-    // 3. Fallback: FormSubmit formatted box template
-    if (!emailDispatched) {
-      const origin =
-        request.headers.get("origin") ||
-        request.nextUrl.origin ||
-        "https://avijitvilla.vercel.app";
-      const referer = request.headers.get("referer") || `${origin}/`;
-      const isSameEmail = email.toLowerCase() === ownerEmail.toLowerCase();
-
+    // Dispatch Gmail SMTP / Resend / Web3Forms / FormSubmit in background after sending HTTP response
+    after(async () => {
       try {
-        const forwardRes = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(ownerEmail)}`, {
+        const directRes = await sendRealEmail({
+          to: ownerEmail,
+          replyTo: `${name} <${email}>`,
+          subject: `New ${villaTitle} Inquiry — ${name}`,
+          text: plainBody,
+          html: htmlBody,
+          fromName: `${villaTitle} Concierge`,
+        });
+
+        if (directRes.dispatched) return;
+
+        await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(ownerEmail)}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -220,33 +222,9 @@ export async function POST(request: NextRequest) {
             Location: footerLocation,
           }),
         });
-
-        const forwardJson = await forwardRes.json().catch(() => null);
-        if (
-          forwardRes.ok &&
-          (forwardJson?.success === true || forwardJson?.success === "true")
-        ) {
-          emailDispatched = true;
-          deliveryChannel = "formsubmit";
-        }
-        if (forwardJson?.message) {
-          providerMessage = String(forwardJson.message);
-        }
       } catch {
-        // Offline/blocked fallback
+        // Inquiry already saved in DB/KV
       }
-    }
-
-    // Persist inquiry in SQLite + Cloud KV so admin can always view & manage leads
-    const inquiryId = await insertInquiryCloud({
-      source,
-      name,
-      email,
-      phone,
-      arrivalProtocol,
-      requirement,
-      emailDispatched,
-      deliveryChannel,
     });
 
     const whatsappText = [
@@ -269,9 +247,11 @@ export async function POST(request: NextRequest) {
       ok: true,
       inquiryId,
       ownerEmail,
-      emailDispatched,
-      deliveryChannel,
-      providerMessage,
+      emailDispatched: hasDirectMailer,
+      deliveryChannel: hasDirectMailer ? "smtp" : "formsubmit",
+      providerMessage: hasDirectMailer
+        ? `Delivering directly to ${ownerEmail}.`
+        : "",
       whatsappUrl,
       mailtoUrl,
       formattedText: whatsappText,
