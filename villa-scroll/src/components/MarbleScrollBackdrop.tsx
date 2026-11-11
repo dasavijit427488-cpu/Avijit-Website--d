@@ -75,33 +75,36 @@ export default function MarbleScrollBackdrop({
       // Brisk smoothed damping responds quickly without wheel jitter
       smoothedProgress += (targetProgress - smoothedProgress) * 0.14;
 
-      if (marbleImgRef.current) {
+      const isMobViewport = typeof window !== "undefined" && window.innerWidth < 768;
+
+      if (marbleImgRef.current && !isMobViewport) {
         const scale = 1.06 + smoothedProgress * 0.12;
         const translateY = -smoothedProgress * 60;
         const translateX = Math.sin(smoothedProgress * Math.PI * 1.4) * 26;
         marbleImgRef.current.style.transform = `translate3d(${translateX.toFixed(2)}px, ${translateY.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
       }
 
-      if (flare1Ref.current) {
+      if (flare1Ref.current && !isMobViewport) {
         const x = Math.sin(smoothedProgress * Math.PI) * 110;
         const y = smoothedProgress * 140;
         flare1Ref.current.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
       }
 
-      if (flare2Ref.current) {
+      if (flare2Ref.current && !isMobViewport) {
         const x = -Math.cos(smoothedProgress * Math.PI) * 90;
         const y = -smoothedProgress * 110;
         flare2Ref.current.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
       }
 
-      for (let i = 0; i < FAST_3D_SCULPTURES.length; i++) {
+      const maxAnimObjects = isMobViewport ? 3 : FAST_3D_SCULPTURES.length;
+      for (let i = 0; i < maxAnimObjects; i++) {
         const node = objRefs.current[i];
         const cfg = FAST_3D_SCULPTURES[i];
         if (!node || !cfg) continue;
 
-        const floatX = Math.sin(elapsedSec * cfg.floatSpeed * objectsSpeedMult + cfg.id * 1.3) * 22;
+        const floatX = Math.sin(elapsedSec * cfg.floatSpeed * objectsSpeedMult + cfg.id * 1.3) * (isMobViewport ? 14 : 22);
         const floatY =
-          Math.cos(elapsedSec * cfg.floatSpeed * 0.9 * objectsSpeedMult + cfg.id) * 24 +
+          Math.cos(elapsedSec * cfg.floatSpeed * 0.9 * objectsSpeedMult + cfg.id) * (isMobViewport ? 16 : 24) +
           smoothedProgress * cfg.scrollTravel * 0.55;
         const rx = elapsedSec * cfg.rotSpeedX * objectsSpeedMult + smoothedProgress * 460;
         const ry = elapsedSec * cfg.rotSpeedY * objectsSpeedMult + smoothedProgress * 620;
@@ -172,7 +175,7 @@ export default function MarbleScrollBackdrop({
             quality={95}
             loading="lazy"
             decoding="async"
-            className="object-cover opacity-90 brightness-105 contrast-105"
+            className="object-cover opacity-90 md:brightness-105 md:contrast-105"
           />
         </div>
 
@@ -208,7 +211,7 @@ export default function MarbleScrollBackdrop({
                   height: obj.size,
                   transformStyle: "preserve-3d",
                 }}
-                className={`absolute will-change-transform scale-75 sm:scale-100 ${obj.mobileHide ? "hidden md:block" : "block opacity-80 sm:opacity-100"}`}
+                className={`absolute will-change-transform scale-75 sm:scale-100 ${obj.mobileHide || idx >= 3 ? "hidden md:block" : "block opacity-80 sm:opacity-100"}`}
               >
                 {/* 1. 3D Faceted Gold & Ivory Cut Diamond Prism */}
                 {obj.kind === "diamond" && (

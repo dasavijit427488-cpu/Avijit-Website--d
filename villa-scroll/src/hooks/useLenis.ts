@@ -38,6 +38,14 @@ export function useLenis() {
 
     const isDesktop = typeof window !== "undefined" ? window.innerWidth >= 768 : true;
 
+    // On mobile viewports, native browser touch momentum runs at hardware 60/120fps without Lenis ticker overhead
+    if (!isDesktop) {
+      const mobileRefresh = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 400);
+      return () => clearTimeout(mobileRefresh);
+    }
+
     const lenis = new Lenis({
       autoRaf: false,
       smoothWheel: false,

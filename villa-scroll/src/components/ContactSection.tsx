@@ -402,7 +402,7 @@ export default function ContactSection() {
                             loading="lazy"
                             decoding="async"
                             style={getImageFramingStyle(config, "contact.avatar", 50, 20, 106)}
-                            className="object-cover transition-transform duration-500 contrast-105 brightness-105"
+                            className="object-cover transition-transform duration-500 md:contrast-105 md:brightness-105"
                           />
                           {/* Subtle 3D Specular Glass Rim */}
                           <div

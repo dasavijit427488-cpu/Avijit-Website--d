@@ -143,11 +143,13 @@ export default function CanvasSequence({
     [getCanvasContext]
   );
 
-  // VRAM safeguard: evicts & closes distant ImageBitmaps outside active window on both mobile & desktop
+  // VRAM safeguard: evicts distant ImageBitmaps on desktop; mobile caches keyframes cleanly without churn
   const evictDistantFrames = useCallback((centerFrame: number) => {
     const total = activeTotalRef.current;
-    const keepRadius = isMobileRef.current ? 75 : 110;
+    const isMob = isMobileRef.current;
+    const keepRadius = isMob ? 95 : 110;
     for (let i = 1; i <= total; i++) {
+      if (isMob && i % 2 === 1) continue;
       if (Math.abs(i - centerFrame) > keepRadius && imagesRef.current[i]) {
         const item = imagesRef.current[i];
         if (item && "close" in item && typeof item.close === "function") {
@@ -278,6 +280,8 @@ export default function CanvasSequence({
     [loadImage, evictDistantFrames]
   );
 
+  const lastMobilePriorityAtRef = useRef<number>(0);
+
   const renderFrame = useCallback(
     (targetFrame: number) => {
       if (targetFrame === lastDrawnFrameRef.current) return;
@@ -293,11 +297,23 @@ export default function CanvasSequence({
         return;
       }
 
-      loadImage(targetFrame, true).then((loaded) => {
-        if (loaded && Math.abs(currentTargetFrameRef.current - targetFrame) <= 3) {
-          drawFrameImage(loaded, targetFrame);
+      // On mobile touch-flick, throttle priority network fetches to keyframes cleanly to stay at 60fps
+      const shouldFetchExact =
+        !isMobileRef.current ||
+        !isScrollingRef.current ||
+        targetFrame % 2 === 1 ||
+        performance.now() - lastMobilePriorityAtRef.current > 90;
+
+      if (shouldFetchExact) {
+        if (isMobileRef.current) {
+          lastMobilePriorityAtRef.current = performance.now();
         }
-      });
+        loadImage(targetFrame, true).then((loaded) => {
+          if (loaded && Math.abs(currentTargetFrameRef.current - targetFrame) <= 3) {
+            drawFrameImage(loaded, targetFrame);
+          }
+        });
+      }
 
       // Outward nearest-keyframe search across full sequence guarantees instant zero-freeze visual response
       const total = activeTotalRef.current;
@@ -339,14 +355,14 @@ export default function CanvasSequence({
     const isPortraitPhone = rawW < 768 && rawH >= rawW;
     const isMob = isMobileRef.current;
 
-    // Portrait mobile matches 1080p center pixels ~1:1 (620x1180) for maximum crispness & 60fps fill-rate
+    // Portrait mobile keeps GPU fill-rate ultra-light (~460x940) for locked 60fps; desktop keeps 1920x1080
     const dpr = isPortraitPhone
-      ? Math.min(window.devicePixelRatio || 1, 1.45)
+      ? Math.min(window.devicePixelRatio || 1, 1.15)
       : rawW < 768
-        ? 1.25
+        ? 1.1
         : Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.min(Math.round(rawW * dpr), isPortraitPhone ? 620 : 1920);
-    const height = Math.min(Math.round(rawH * dpr), isPortraitPhone ? 1180 : 1080);
+    const width = Math.min(Math.round(rawW * dpr), isPortraitPhone ? 460 : 1920);
+    const height = Math.min(Math.round(rawH * dpr), isPortraitPhone ? 940 : 1080);
 
     const prev = lastAllocatedSizeRef.current;
     const widthChanged = Math.abs(width - prev.w) > 2;
@@ -400,16 +416,22 @@ export default function CanvasSequence({
         }
       };
 
-      const openSlice = 14;
+      const openSlice = isMob ? 10 : 14;
       for (let i = 1; i <= openSlice; i++) push(i);
-      const keyStep = Math.max(1, Math.floor(total / 24));
+      const keyStep = Math.max(1, Math.floor(total / (isMob ? 32 : 24)));
       for (let i = 1; i <= total; i += keyStep) push(i);
-      for (let i = 1; i <= total; i += 4) push(i);
-      for (let i = 1; i <= total; i += 2) push(i);
-      for (let i = 1; i <= total; i += 1) push(i);
+      if (isMob) {
+        // Mobile loads 80 odd keyframes first so all Hero frames scrub smoothly before filling evens
+        for (let i = 1; i <= total; i += 2) push(i);
+        for (let i = 2; i <= total; i += 2) push(i);
+      } else {
+        for (let i = 1; i <= total; i += 4) push(i);
+        for (let i = 1; i <= total; i += 2) push(i);
+        for (let i = 1; i <= total; i += 1) push(i);
+      }
 
-      const batchSize = isMob ? 3 : 4;
-      const pauseMs = isMob ? 18 : 16;
+      const batchSize = isMob ? 2 : 4;
+      const pauseMs = isMob ? 24 : 16;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;

@@ -127,7 +127,7 @@ export default function LuxuryPhotoFrame({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           style={getImageFramingStyle(config, slotKey, defaultPosX, defaultPosY, defaultZoom)}
-          className={`object-cover transition-transform duration-700 ease-out brightness-105 contrast-105 ${
+          className={`object-cover transition-transform duration-700 ease-out md:brightness-105 md:contrast-105 ${
             resolvedMotion === "hover-zoom" ? "group-hover:scale-105" : ""
           }`}
         />

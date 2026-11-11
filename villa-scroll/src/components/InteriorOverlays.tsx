@@ -295,7 +295,7 @@ export default function InteriorOverlays({
               />
 
               {/* Clean Category Subtitle (No dots, no numbers, no pill border) */}
-              <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] sm:tracking-[0.3em] text-amber-200/90 font-semibold font-body mb-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] sm:drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] sm:tracking-[0.3em] text-amber-200/90 font-semibold font-body mb-2 [text-shadow:0_1px_5px_rgba(0,0,0,0.9)] sm:[text-shadow:none] sm:drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                 {room.subtitle}
               </span>
 
@@ -310,7 +310,7 @@ export default function InteriorOverlays({
                       }
                     : undefined
                 }
-                className="font-display text-3xl sm:text-5xl md:text-[54px] font-bold uppercase tracking-[0.04em] text-gold-gradient mb-3.5 leading-[1.08] drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] sm:drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)]"
+                className="font-display text-3xl sm:text-5xl md:text-[54px] font-bold uppercase tracking-[0.04em] text-gold-gradient mb-3.5 leading-[1.08] sm:drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)]"
               >
                 {room.title}
               </h3>
@@ -318,7 +318,7 @@ export default function InteriorOverlays({
               {/* Clean Poetic Architectural Statement + Subtle Divider Bar */}
               <p
                 style={roomColors?.roomTextColor ? { color: roomColors.roomTextColor } : undefined}
-                className="font-editorial-italic text-sm sm:text-xl md:text-[22px] text-[#f5ede0] font-light leading-relaxed tracking-wide drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] sm:drop-shadow-[0_2px_14px_rgba(0,0,0,0.98)] max-w-xl mb-4"
+                className="font-editorial-italic text-sm sm:text-xl md:text-[22px] text-[#f5ede0] font-light leading-relaxed tracking-wide [text-shadow:0_1px_5px_rgba(0,0,0,0.9)] sm:[text-shadow:none] sm:drop-shadow-[0_2px_14px_rgba(0,0,0,0.98)] max-w-xl mb-4"
               >
                 &ldquo;{room.description}&rdquo;
               </p>

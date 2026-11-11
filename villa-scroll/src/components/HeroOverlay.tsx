@@ -257,8 +257,8 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
         <div
           className={`header-capsule max-w-6xl mx-auto transition-colors duration-300 ease-out px-4 sm:px-6 md:px-10 py-2.5 sm:py-3 flex items-center justify-between pointer-events-auto ${
             isBrightHeader
-              ? "rounded-2xl bg-white/55 backdrop-blur-md border border-[#b58b28]/45 shadow-[0_8px_28px_rgba(140,110,45,0.14)]"
-              : "rounded-full bg-black/45 border border-white/25 hover:border-amber-300/45 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+              ? "rounded-2xl bg-white/92 md:bg-white/55 md:backdrop-blur-md border border-[#b58b28]/45 shadow-[0_8px_28px_rgba(140,110,45,0.14)]"
+              : "rounded-full bg-black/55 md:bg-black/45 border border-white/25 hover:border-amber-300/45 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
           }`}
         >
           {/* Left: Brand Monogram & Bespoke Architectural Crest */}
@@ -291,7 +291,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
                 className={`font-display text-base sm:text-xl font-black leading-none transition-colors ${
                   isBrightHeader
                     ? "text-[#8b6914]"
-                    : "text-amber-300 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
+                    : "text-amber-300 sm:drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
                 }`}
               >
                 {brand.brandFirstLetter}
@@ -300,7 +300,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
                 className={`font-display text-[10px] sm:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] leading-none transition-colors ${
                   isBrightHeader
                     ? "text-[#1c1812]"
-                    : "text-[#fbf6ee] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+                    : "text-[#fbf6ee] sm:drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
                 }`}
               >
                 {brand.brandMiddleText}
@@ -309,7 +309,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
                 className={`font-display text-[11px] sm:text-sm font-black tracking-[0.22em] sm:tracking-[0.28em] uppercase ml-1 leading-none transition-colors ${
                   isBrightHeader
                     ? "text-[#9c7212]"
-                    : "text-gold-gradient drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
+                    : "text-gold-gradient sm:drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
                 }`}
               >
                 {brand.brandLastWord}
@@ -510,10 +510,10 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
                       }
                     : undefined
                 }
-                className="font-display text-[28px] xs:text-[32px] sm:text-5xl md:text-6xl lg:text-[68px] font-bold tracking-[0.04em] sm:tracking-[0.05em] uppercase text-gold-gradient mb-3 sm:mb-4 drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] sm:drop-shadow-[0_8px_30px_rgba(0,0,0,0.9)] leading-[1.12] sm:leading-[1.08]"
+                className="font-display text-[28px] xs:text-[32px] sm:text-5xl md:text-6xl lg:text-[68px] font-bold tracking-[0.04em] sm:tracking-[0.05em] uppercase text-gold-gradient mb-3 sm:mb-4 sm:drop-shadow-[0_8px_30px_rgba(0,0,0,0.9)] leading-[1.12] sm:leading-[1.08]"
               >
                 {hero.headlineLine1} <br />
-                <span className="text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.75)] sm:drop-shadow-[0_4px_25px_rgba(255,255,255,0.35)]">
+                <span className="text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.8)] sm:[text-shadow:none] sm:drop-shadow-[0_4px_25px_rgba(255,255,255,0.35)]">
                   {hero.headlineHighlight}
                 </span>{" "}
                 {hero.headlineLine2}
@@ -522,7 +522,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
               {/* Poetic Luxury Statement */}
               <p
                 style={heroColors?.heroTextColor ? { color: heroColors.heroTextColor } : undefined}
-                className="font-editorial-italic text-sm sm:text-xl md:text-2xl text-[#f5ede0] font-light leading-relaxed mb-3.5 sm:mb-4 tracking-wide drop-shadow-[0_1px_4px_rgba(0,0,0,0.88)] sm:drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+                className="font-editorial-italic text-sm sm:text-xl md:text-2xl text-[#f5ede0] font-light leading-relaxed mb-3.5 sm:mb-4 tracking-wide [text-shadow:0_1px_6px_rgba(0,0,0,0.88)] sm:[text-shadow:none] sm:drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
               >
                 &ldquo;{hero.poeticQuote}&rdquo;
               </p>
