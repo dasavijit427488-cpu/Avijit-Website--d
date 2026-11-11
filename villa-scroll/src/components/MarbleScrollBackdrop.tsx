@@ -169,10 +169,9 @@ export default function MarbleScrollBackdrop({
             alt="Bright White Calacatta Gold Italian Marble Background"
             fill
             sizes="100vw"
-            quality={100}
-            priority
-            loading="eager"
-            decoding="sync"
+            quality={95}
+            loading="lazy"
+            decoding="async"
             className="object-cover opacity-90 brightness-105 contrast-105"
           />
         </div>
@@ -180,14 +179,14 @@ export default function MarbleScrollBackdrop({
         {/* Soft Ivory Translucent Veil */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/45 via-[#faf6ed]/28 to-[#fffcf5]/45" />
 
-        {/* Subtle Moving Sunlit Champagne & Warm Gold Orbs */}
+        {/* Subtle Moving Sunlit Champagne & Warm Gold Orbs (zero-blur GPU radial gradients) */}
         <div
           ref={flare1Ref}
-          className="absolute -top-24 right-[10%] w-[560px] h-[560px] rounded-full blur-[120px] bg-gradient-to-br from-[#f2ca50]/25 via-[#ffe699]/20 to-transparent will-change-transform"
+          className="hidden sm:block absolute -top-24 right-[10%] w-[560px] h-[560px] rounded-full bg-[radial-gradient(circle,rgba(242,202,80,0.22)_0%,rgba(255,230,153,0.12)_35%,transparent_72%)] will-change-transform"
         />
         <div
           ref={flare2Ref}
-          className="absolute bottom-[-10%] -left-20 w-[560px] h-[560px] rounded-full blur-[120px] bg-gradient-to-tr from-[#e0c382]/25 via-[#f7e7c4]/20 to-transparent will-change-transform"
+          className="hidden sm:block absolute bottom-[-10%] -left-20 w-[560px] h-[560px] rounded-full bg-[radial-gradient(circle,rgba(224,195,130,0.22)_0%,rgba(247,231,196,0.12)_35%,transparent_72%)] will-change-transform"
         />
 
         {/* Fast-Spinning New 3D Geometric & Sculptural Objects */}

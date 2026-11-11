@@ -6,6 +6,13 @@ import {
   DEFAULT_SITE_CONFIG,
   type SiteConfig,
 } from "./defaultSiteConfig";
+import {
+  isCloudKvConfigured,
+  isServerlessRuntime,
+  kvDelete,
+  kvGetJson,
+  kvSetJson,
+} from "./cloudStore";
 
 function resolveDataDir(): string {
   const localData = path.join(process.cwd(), "data");
@@ -484,4 +491,287 @@ export function getDatabaseStats(): {
   }
   return { usersCount, sectionsCount, inquiriesCount, mediaCount, dbSizeKb };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Cloud-Synced Async Persistence (Upstash / Vercel KV + SQLite)     */
+/* ------------------------------------------------------------------ */
+
+const KV_SITE_KEY = "villa:site_config";
+const KV_SETTINGS_KEY = "villa:app_settings";
+const KV_INQUIRIES_KEY = "villa:inquiries";
+const KV_MEDIA_KEY = "villa:media_assets";
+
+function mergeFullConfig(raw: Partial<SiteConfig> | null | undefined): SiteConfig {
+  if (!raw || typeof raw !== "object") return getSiteConfig();
+  return {
+    brand: mergeSection(DEFAULT_SITE_CONFIG.brand, raw.brand),
+    hero: mergeSection(DEFAULT_SITE_CONFIG.hero, raw.hero),
+    rooms: mergeSection(DEFAULT_SITE_CONFIG.rooms, raw.rooms),
+    materiality: mergeSection(DEFAULT_SITE_CONFIG.materiality, raw.materiality),
+    masterplan: mergeSection(DEFAULT_SITE_CONFIG.masterplan, raw.masterplan),
+    contact: mergeSection(DEFAULT_SITE_CONFIG.contact, raw.contact),
+    design: mergeSection(DEFAULT_SITE_CONFIG.design, raw.design),
+  };
+}
+
+export async function getSiteConfigCloud(): Promise<{
+  config: SiteConfig;
+  cloudSynced: boolean;
+  isServerless: boolean;
+}> {
+  const isServerless = isServerlessRuntime();
+  if (isCloudKvConfigured()) {
+    const remote = await kvGetJson<Partial<SiteConfig>>(KV_SITE_KEY);
+    if (remote) {
+      const merged = mergeFullConfig(remote);
+      try {
+        saveAllSiteConfig(merged, "cloud_sync");
+      } catch {
+        // Ignore local cache write errors
+      }
+      return { config: merged, cloudSynced: true, isServerless };
+    }
+  }
+  return {
+    config: getSiteConfig(),
+    cloudSynced: !isServerless || isCloudKvConfigured(),
+    isServerless,
+  };
+}
+
+export async function saveSiteSectionCloud<K extends keyof SiteConfig>(
+  sectionKey: K,
+  value: SiteConfig[K],
+  updatedBy: string
+): Promise<{ config: SiteConfig; cloudSynced: boolean; isServerless: boolean }> {
+  const isServerless = isServerlessRuntime();
+  if (isCloudKvConfigured()) {
+    const { config: current } = await getSiteConfigCloud();
+    const mergedSection = mergeSection(current[sectionKey], value);
+    const nextConfig: SiteConfig = { ...current, [sectionKey]: mergedSection };
+    try {
+      saveAllSiteConfig(nextConfig, updatedBy);
+    } catch {
+      // Ignore local SQLite write failure if read-only
+    }
+    const ok = await kvSetJson(KV_SITE_KEY, nextConfig);
+    return { config: nextConfig, cloudSynced: ok, isServerless };
+  }
+
+  saveSiteSection(sectionKey, value, updatedBy);
+  return {
+    config: getSiteConfig(),
+    cloudSynced: !isServerless,
+    isServerless,
+  };
+}
+
+export async function saveAllSiteConfigCloud(
+  incoming: Partial<SiteConfig>,
+  updatedBy: string
+): Promise<{ config: SiteConfig; cloudSynced: boolean; isServerless: boolean }> {
+  const isServerless = isServerlessRuntime();
+  if (isCloudKvConfigured()) {
+    const { config: current } = await getSiteConfigCloud();
+    const nextConfig: SiteConfig = {
+      brand: incoming.brand !== undefined ? mergeSection(current.brand, incoming.brand) : current.brand,
+      hero: incoming.hero !== undefined ? mergeSection(current.hero, incoming.hero) : current.hero,
+      rooms: incoming.rooms !== undefined ? mergeSection(current.rooms, incoming.rooms) : current.rooms,
+      materiality:
+        incoming.materiality !== undefined
+          ? mergeSection(current.materiality, incoming.materiality)
+          : current.materiality,
+      masterplan:
+        incoming.masterplan !== undefined
+          ? mergeSection(current.masterplan, incoming.masterplan)
+          : current.masterplan,
+      contact: incoming.contact !== undefined ? mergeSection(current.contact, incoming.contact) : current.contact,
+      design: incoming.design !== undefined ? mergeSection(current.design, incoming.design) : current.design,
+    };
+    try {
+      saveAllSiteConfig(nextConfig, updatedBy);
+    } catch {
+      // Ignore local cache write failure
+    }
+    const ok = await kvSetJson(KV_SITE_KEY, nextConfig);
+    return { config: nextConfig, cloudSynced: ok, isServerless };
+  }
+
+  const next = saveAllSiteConfig(incoming, updatedBy);
+  return {
+    config: next,
+    cloudSynced: !isServerless,
+    isServerless,
+  };
+}
+
+export async function resetAllSiteConfigCloud(updatedBy: string): Promise<{
+  config: SiteConfig;
+  cloudSynced: boolean;
+  isServerless: boolean;
+}> {
+  const isServerless = isServerlessRuntime();
+  if (isCloudKvConfigured()) {
+    try {
+      resetAllSiteConfig(updatedBy);
+    } catch {
+      // Ignore
+    }
+    const ok = await kvSetJson(KV_SITE_KEY, DEFAULT_SITE_CONFIG);
+    return { config: DEFAULT_SITE_CONFIG, cloudSynced: ok, isServerless };
+  }
+  const next = resetAllSiteConfig(updatedBy);
+  return { config: next, cloudSynced: !isServerless, isServerless };
+}
+
+export async function getAppSettingCloud(key: string): Promise<string> {
+  if (isCloudKvConfigured()) {
+    const remote = await kvGetJson<Record<string, string>>(KV_SETTINGS_KEY);
+    if (remote && typeof remote[key] === "string") {
+      return remote[key];
+    }
+  }
+  return getAppSetting(key);
+}
+
+export async function setAppSettingCloud(key: string, value: string): Promise<void> {
+  try {
+    setAppSetting(key, value);
+  } catch {
+    // Ignore local SQLite error if read-only
+  }
+  if (isCloudKvConfigured()) {
+    const remote = (await kvGetJson<Record<string, string>>(KV_SETTINGS_KEY)) ?? {};
+    remote[key] = value;
+    await kvSetJson(KV_SETTINGS_KEY, remote);
+  }
+}
+
+export async function insertInquiryCloud(input: {
+  source?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  arrivalProtocol?: string;
+  requirement: string;
+  emailDispatched: boolean;
+  deliveryChannel: string;
+}): Promise<number> {
+  const id = insertInquiry(input);
+  if (isCloudKvConfigured()) {
+    const existing = (await kvGetJson<InquiryRecord[]>(KV_INQUIRIES_KEY)) ?? [];
+    const nextRecord: InquiryRecord = {
+      id: Date.now(),
+      source: input.source ?? "contact_form",
+      name: input.name,
+      email: input.email,
+      phone: input.phone ?? "",
+      arrival_protocol: input.arrivalProtocol ?? "",
+      requirement: input.requirement,
+      email_dispatched: input.emailDispatched ? 1 : 0,
+      delivery_channel: input.deliveryChannel,
+      status: "new",
+      created_at: new Date().toISOString(),
+    };
+    await kvSetJson(KV_INQUIRIES_KEY, [nextRecord, ...existing].slice(0, 250));
+    return nextRecord.id;
+  }
+  return id;
+}
+
+export async function listInquiriesCloud(): Promise<InquiryRecord[]> {
+  if (isCloudKvConfigured()) {
+    const remote = await kvGetJson<InquiryRecord[]>(KV_INQUIRIES_KEY);
+    if (Array.isArray(remote)) return remote;
+  }
+  return listInquiries();
+}
+
+export async function updateInquiryStatusCloud(id: number, status: string): Promise<void> {
+  try {
+    updateInquiryStatus(id, status);
+  } catch {
+    // Ignore
+  }
+  if (isCloudKvConfigured()) {
+    const remote = (await kvGetJson<InquiryRecord[]>(KV_INQUIRIES_KEY)) ?? [];
+    const updated = remote.map((r) => (Number(r.id) === id ? { ...r, status } : r));
+    await kvSetJson(KV_INQUIRIES_KEY, updated);
+  }
+}
+
+export async function deleteInquiryCloud(id: number): Promise<void> {
+  try {
+    deleteInquiry(id);
+  } catch {
+    // Ignore
+  }
+  if (isCloudKvConfigured()) {
+    const remote = (await kvGetJson<InquiryRecord[]>(KV_INQUIRIES_KEY)) ?? [];
+    await kvSetJson(
+      KV_INQUIRIES_KEY,
+      remote.filter((r) => Number(r.id) !== id)
+    );
+  }
+}
+
+export async function insertMediaAssetCloud(
+  input: {
+    filename: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    url: string;
+    uploadedBy: string;
+  },
+  base64Payload?: string
+): Promise<MediaAssetRecord> {
+  const localRec = insertMediaAsset(input);
+  if (isCloudKvConfigured()) {
+    if (base64Payload) {
+      await kvSetJson(`villa:media:blob:${input.filename}`, {
+        mimeType: input.mimeType,
+        base64: base64Payload,
+      });
+    }
+    const existing = (await kvGetJson<MediaAssetRecord[]>(KV_MEDIA_KEY)) ?? [];
+    const cloudRec: MediaAssetRecord = { ...localRec, id: Date.now() };
+    await kvSetJson(KV_MEDIA_KEY, [cloudRec, ...existing].slice(0, 200));
+    return cloudRec;
+  }
+  return localRec;
+}
+
+export async function listMediaAssetsCloud(): Promise<MediaAssetRecord[]> {
+  if (isCloudKvConfigured()) {
+    const remote = await kvGetJson<MediaAssetRecord[]>(KV_MEDIA_KEY);
+    if (Array.isArray(remote)) return remote;
+  }
+  return listMediaAssets();
+}
+
+export async function deleteMediaAssetCloud(id: number): Promise<MediaAssetRecord | null> {
+  const localRemoved = deleteMediaAsset(id);
+  if (isCloudKvConfigured()) {
+    const remote = (await kvGetJson<MediaAssetRecord[]>(KV_MEDIA_KEY)) ?? [];
+    const target = remote.find((a) => Number(a.id) === id) ?? localRemoved;
+    await kvSetJson(
+      KV_MEDIA_KEY,
+      remote.filter((a) => Number(a.id) !== id)
+    );
+    if (target?.filename) {
+      await kvDelete(`villa:media:blob:${target.filename}`);
+    }
+    return target ?? null;
+  }
+  return localRemoved;
+}
+
+export async function getMediaBlobCloud(
+  filename: string
+): Promise<{ mimeType: string; base64: string } | null> {
+  if (!isCloudKvConfigured()) return null;
+  return kvGetJson<{ mimeType: string; base64: string }>(`villa:media:blob:${filename}`);
+}
+
 

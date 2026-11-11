@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
-import { getAppSetting, getSiteConfig, insertInquiry } from "@/lib/db";
+import { getSiteConfigCloud, insertInquiryCloud } from "@/lib/db";
+import { sendRealEmail } from "@/lib/email";
 
 function escapeHtml(text: string): string {
   return text
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const siteConfig = getSiteConfig();
+    const { config: siteConfig } = await getSiteConfigCloud();
     const ownerEmail = siteConfig.contact.ownerEmail || "dasavijit427488@gmail.com";
     const ownerWhatsapp =
       siteConfig.contact.whatsappNumber.replace(/\D/g, "") || "919038904861";
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     const footerLocation = siteConfig.contact.footerLocationText;
 
     let emailDispatched = false;
-    let deliveryChannel: "smtp" | "resend" | "formsubmit" | "manual" = "manual";
+    let deliveryChannel: "smtp" | "resend" | "web3forms" | "formsubmit" | "manual" = "manual";
     let providerMessage = "";
 
     const htmlBody = buildLuxuryHtmlEmail({
@@ -164,69 +164,27 @@ export async function POST(request: NextRequest) {
       `Location: ${footerLocation}`,
     ].join("\n");
 
-    // 1. Primary: Direct Gmail SMTP via Nodemailer (reads SQLite app_settings first, then .env.local)
-    const smtpPass =
-      getAppSetting("smtp_pass") ||
-      process.env.GMAIL_APP_PASSWORD ||
-      process.env.SMTP_PASS;
-    const smtpUser =
-      getAppSetting("smtp_user") || process.env.SMTP_USER || ownerEmail;
+    // 1 & 2. Primary Real Email Delivery: Gmail SMTP / Resend / Web3Forms
+    const directRes = await sendRealEmail({
+      to: ownerEmail,
+      replyTo: `${name} <${email}>`,
+      subject: `New ${villaTitle} Inquiry — ${name}`,
+      text: plainBody,
+      html: htmlBody,
+      fromName: `${villaTitle} Concierge`,
+    });
 
-    if (smtpPass) {
-      try {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
-        });
-
-        await transporter.sendMail({
-          from: `"${villaTitle} Concierge" <${smtpUser}>`,
-          to: ownerEmail,
-          replyTo: `${name} <${email}>`,
-          subject: `New ${villaTitle} Inquiry — ${name}`,
-          text: plainBody,
-          html: htmlBody,
-        });
-
-        emailDispatched = true;
-        deliveryChannel = "smtp";
-        providerMessage = "Delivered directly to Gmail inbox.";
-      } catch (err) {
-        providerMessage = err instanceof Error ? err.message : "SMTP dispatch error.";
-      }
-    }
-
-    // 2. Secondary: Resend API if RESEND_API_KEY is configured
-    const resendKey = process.env.RESEND_API_KEY;
-    if (!emailDispatched && resendKey) {
-      try {
-        const resendRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from:
-              process.env.RESEND_FROM_EMAIL || `${villaTitle} <onboarding@resend.dev>`,
-            to: [ownerEmail],
-            reply_to: email,
-            subject: `New ${villaTitle} Inquiry — ${name}`,
-            text: plainBody,
-            html: htmlBody,
-          }),
-        });
-        if (resendRes.ok) {
-          emailDispatched = true;
-          deliveryChannel = "resend";
-          providerMessage = "Delivered via Resend email service.";
-        }
-      } catch {
-        // Fall through cleanly
-      }
+    if (directRes.dispatched) {
+      emailDispatched = true;
+      deliveryChannel =
+        directRes.channel === "resend"
+          ? "resend"
+          : directRes.channel === "web3forms"
+            ? "web3forms"
+            : "smtp";
+      providerMessage = directRes.message;
+    } else if (directRes.message && !directRes.message.includes("No server SMTP")) {
+      providerMessage = directRes.message;
     }
 
     // 3. Fallback: FormSubmit formatted box template
@@ -234,11 +192,12 @@ export async function POST(request: NextRequest) {
       const origin =
         request.headers.get("origin") ||
         request.nextUrl.origin ||
-        "https://avijit-villa.vercel.app";
+        "https://avijitvilla.vercel.app";
       const referer = request.headers.get("referer") || `${origin}/`;
+      const isSameEmail = email.toLowerCase() === ownerEmail.toLowerCase();
 
       try {
-        const forwardRes = await fetch(`https://formsubmit.co/ajax/${ownerEmail}`, {
+        const forwardRes = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(ownerEmail)}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -247,8 +206,11 @@ export async function POST(request: NextRequest) {
             Referer: referer,
           },
           body: JSON.stringify({
+            name,
+            email,
+            message: requirement,
             _subject: `New ${villaTitle} Inquiry — ${name}`,
-            _replyto: email,
+            ...(!isSameEmail ? { _replyto: email } : {}),
             _template: "box",
             "Customer Name": name,
             "Customer Email": email,
@@ -275,8 +237,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Persist inquiry in SQLite Database so admin can always view & manage leads
-    const inquiryId = insertInquiry({
+    // Persist inquiry in SQLite + Cloud KV so admin can always view & manage leads
+    const inquiryId = await insertInquiryCloud({
       source,
       name,
       email,

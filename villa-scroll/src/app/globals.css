@@ -1,14 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #050403;
   --foreground: #f5f0e8;
-  --font-cinzel: "Cinzel", "Times New Roman", serif;
-  --font-cormorant: "Cormorant Garamond", Georgia, serif;
-  --font-playfair: "Playfair Display", Georgia, serif;
-  --font-space-mono: "Space Mono", monospace;
-  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-cinzel: var(--next-font-cinzel, "Cinzel"), "Times New Roman", serif;
+  --font-cormorant: var(--next-font-cormorant, "Cormorant Garamond"), Georgia, serif;
+  --font-playfair: var(--next-font-playfair, "Playfair Display"), Georgia, serif;
+  --font-space-mono: var(--next-font-space-mono, "Space Mono"), monospace;
+  --font-sans: var(--next-font-sans, "Plus Jakarta Sans"), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --active-display-font: var(--font-cinzel);
   --active-heading-font: var(--font-playfair);
   --active-body-font: var(--font-playfair);

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { deleteInquiry, listInquiries, updateInquiryStatus } from "@/lib/db";
+import {
+  deleteInquiryCloud,
+  listInquiriesCloud,
+  updateInquiryStatusCloud,
+} from "@/lib/db";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -8,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true, inquiries: listInquiries() });
+  return NextResponse.json({ ok: true, inquiries: await listInquiriesCloud() });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -24,7 +28,7 @@ export async function PATCH(request: NextRequest) {
     if (!Number.isFinite(id) || !["new", "read", "replied", "archived"].includes(status)) {
       return NextResponse.json({ ok: false, error: "Invalid inquiry update." }, { status: 400 });
     }
-    updateInquiryStatus(id, status);
+    await updateInquiryStatusCloud(id, status);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json(
@@ -45,7 +49,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid id." }, { status: 400 });
   }
 
-  deleteInquiry(id);
+  await deleteInquiryCloud(id);
   return NextResponse.json({ ok: true });
 }
-

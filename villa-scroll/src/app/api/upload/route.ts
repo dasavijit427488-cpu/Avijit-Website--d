@@ -3,10 +3,11 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { getSessionUser } from "@/lib/auth";
+import { isCloudKvConfigured, isServerlessRuntime } from "@/lib/cloudStore";
 import {
-  deleteMediaAsset,
-  insertMediaAsset,
-  listMediaAssets,
+  deleteMediaAssetCloud,
+  insertMediaAssetCloud,
+  listMediaAssetsCloud,
   UPLOADS_DIR,
 } from "@/lib/db";
 
@@ -19,7 +20,7 @@ const ALLOWED_EXT: Record<string, string> = {
   "image/svg+xml": ".svg",
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB (Vercel serverless payload compatible)
 
 export async function GET() {
   const user = await getSessionUser();
@@ -27,7 +28,7 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true, assets: listMediaAssets() });
+  return NextResponse.json({ ok: true, assets: await listMediaAssetsCloud() });
 }
 
 export async function POST(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { ok: false, error: "Image exceeds 10 MB limit." },
+        { ok: false, error: "Image exceeds 4 MB limit." },
         { status: 400 }
       );
     }
@@ -71,17 +72,30 @@ export async function POST(request: NextRequest) {
     const uniqueName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}${validExt}`;
     const destPath = path.join(UPLOADS_DIR, uniqueName);
     const buffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(destPath, buffer);
+    try {
+      fs.writeFileSync(destPath, buffer);
+    } catch {
+      // Ignore ephemeral disk write failure if Cloud KV / data URL is used
+    }
 
-    const url = `/api/media/${uniqueName}`;
-    const asset = insertMediaAsset({
-      filename: uniqueName,
-      originalName: file.name || uniqueName,
-      mimeType: mime,
-      sizeBytes: file.size,
-      url,
-      uploadedBy: user.username,
-    });
+    const base64Str = buffer.toString("base64");
+    const useInlineDataUrl =
+      isServerlessRuntime() && !isCloudKvConfigured() && buffer.length <= 900 * 1024;
+    const url = useInlineDataUrl
+      ? `data:${mime};base64,${base64Str}`
+      : `/api/media/${uniqueName}`;
+
+    const asset = await insertMediaAssetCloud(
+      {
+        filename: uniqueName,
+        originalName: file.name || uniqueName,
+        mimeType: mime,
+        sizeBytes: file.size,
+        url,
+        uploadedBy: user.username,
+      },
+      isCloudKvConfigured() ? base64Str : undefined
+    );
 
     return NextResponse.json({ ok: true, url, asset });
   } catch (err) {
@@ -103,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid asset id." }, { status: 400 });
   }
 
-  const removed = deleteMediaAsset(id);
+  const removed = await deleteMediaAssetCloud(id);
   if (removed) {
     const filePath = path.join(UPLOADS_DIR, path.basename(removed.filename));
     if (fs.existsSync(filePath)) {
@@ -112,4 +126,3 @@ export async function DELETE(request: NextRequest) {
   }
   return NextResponse.json({ ok: true });
 }
-

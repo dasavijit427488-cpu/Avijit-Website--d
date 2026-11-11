@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { UPLOADS_DIR } from "@/lib/db";
+import { getMediaBlobCloud, UPLOADS_DIR } from "@/lib/db";
 
 const MIME_BY_EXT: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -22,21 +22,32 @@ export async function GET(
     return NextResponse.json({ error: "Invalid file" }, { status: 400 });
   }
 
+  const ext = path.extname(safeName).toLowerCase();
+  const fallbackContentType = MIME_BY_EXT[ext] || "application/octet-stream";
+
   const filePath = path.join(UPLOADS_DIR, safeName);
-  if (!fs.existsSync(filePath)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (fs.existsSync(filePath)) {
+    const fileBuffer = fs.readFileSync(filePath);
+    return new NextResponse(fileBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": fallbackContentType,
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
   }
 
-  const ext = path.extname(safeName).toLowerCase();
-  const contentType = MIME_BY_EXT[ext] || "application/octet-stream";
-  const fileBuffer = fs.readFileSync(filePath);
+  const cloudBlob = await getMediaBlobCloud(safeName);
+  if (cloudBlob?.base64) {
+    const buf = Buffer.from(cloudBlob.base64, "base64");
+    return new NextResponse(buf, {
+      status: 200,
+      headers: {
+        "Content-Type": cloudBlob.mimeType || fallbackContentType,
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  }
 
-  return new NextResponse(fileBuffer, {
-    status: 200,
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
 }
-

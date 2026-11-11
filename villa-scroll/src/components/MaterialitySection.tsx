@@ -78,8 +78,8 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
     const ctx = gsap.context(() => {
       const replayTrigger = (triggerEl: Element | null) => ({
         trigger: triggerEl,
-        start: "top 102%",
-        toggleActions: "play none none reset",
+        start: "top 92%",
+        toggleActions: "play none none none",
       });
 
       const animEl = (
@@ -92,15 +92,16 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
         const off = getMotionOffset(anim, defFrom);
         gsap.fromTo(
           target,
-          { opacity: 0, x: off.x, y: off.y, scale: off.scale },
+          { opacity: 0, x: off.x, y: off.y, scale: off.scale, force3D: true },
           {
             opacity: 1,
             x: 0,
             y: 0,
             scale: 1,
+            force3D: true,
             duration: dur * spd,
             ...(staggerVal ? { stagger: staggerVal * spd } : {}),
-            ease: "power2.out",
+            ease: "power3.out",
             scrollTrigger: replayTrigger(triggerEl),
           }
         );
@@ -136,10 +137,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
       }
     }, el);
 
-    const refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 300);
-
     return () => {
-      clearTimeout(refreshTimer);
       ctx.revert();
     };
   }, [anim?.enabled, anim?.speed, anim?.directionMode]);
@@ -184,7 +182,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
               </div>
 
               {/* Clean Coordinate & Architect Summary Card */}
-              <div className="flex flex-col gap-2 p-5 sm:p-6 bg-white/80 rounded-2xl border border-[#c9a84c]/40 shadow-[0_14px_38px_rgba(140,110,45,0.12)] w-full lg:w-auto lg:min-w-[320px] backdrop-blur-xl">
+              <div className="flex flex-col gap-2 p-5 sm:p-6 bg-white/80 rounded-2xl border border-[#c9a84c]/40 shadow-[0_14px_38px_rgba(140,110,45,0.12)] w-full lg:w-auto lg:min-w-[320px] md:backdrop-blur-md">
                 {mat.summaryRows.map((row, idx) => {
                   const isLast = idx === mat.summaryRows.length - 1;
                   return (
@@ -217,7 +215,6 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
                   src={view.src}
                   alt={view.alt}
                   sizes="(max-width: 768px) 100vw, 33vw"
-                  priority={idx === 0}
                   innerHeightClass="aspect-[4/3]"
                 />
               ))}
@@ -226,7 +223,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
         </div>
 
         {/* 2. REDESIGNED AIRY WHITE-GOLD ARCHITECTURAL VOLUMES STRIP */}
-        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 bg-white/30 backdrop-blur-[2px] border-y border-[#c9a84c]/25">
+        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 bg-white/30 md:backdrop-blur-[2px] border-y border-[#c9a84c]/25">
           <div className="max-w-7xl mx-auto">
             <div ref={volumesHeaderRef} className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6">
               <div>
@@ -323,7 +320,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
             {/* Right 5 Cols: Clean Narrative */}
             <div
               ref={platesNarrativeRef}
-              className="lg:col-span-5 flex flex-col justify-center space-y-4 sm:space-y-6 lg:pl-4 bg-white/75 backdrop-blur-xl p-6 sm:p-10 rounded-3xl border border-[#c9a84c]/35 shadow-[0_18px_45px_rgba(140,110,45,0.12)]"
+              className="lg:col-span-5 flex flex-col justify-center space-y-4 sm:space-y-6 lg:pl-4 bg-white/75 md:backdrop-blur-md p-6 sm:p-10 rounded-3xl border border-[#c9a84c]/35 shadow-[0_18px_45px_rgba(140,110,45,0.12)]"
             >
               <div className="text-xs uppercase tracking-[0.2em] text-[#8b6914] font-semibold">
                 {mat.narrativeKicker}
@@ -357,7 +354,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
         </div>
 
         {/* 4. RANDOMIZED LUXURY EXTERIOR PERSPECTIVES */}
-        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 bg-white/30 backdrop-blur-[2px] border-y border-[#c9a84c]/25">
+        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 bg-white/30 md:backdrop-blur-[2px] border-y border-[#c9a84c]/25">
           <div className="max-w-7xl mx-auto">
             <div ref={exteriorHeaderRef} className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-7 sm:mb-10">
               <div>
@@ -398,7 +395,7 @@ export default function MaterialitySection({ onInquireClick }: MaterialitySectio
         {/* 5. LEFT-ALIGNED ARCHITECT QUOTATION */}
         <div className="relative w-full px-4 sm:px-6 md:px-20 py-12 sm:py-20">
           <div className="max-w-7xl mx-auto">
-            <div ref={quoteCardRef} className={`max-w-4xl bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-12 border border-[#c9a84c]/40 shadow-[0_20px_50px_rgba(140,110,45,0.14)] flex flex-col ${textAlign === "center" ? "mx-auto items-center text-center" : textAlign === "right" ? "ml-auto items-end text-right" : "items-start text-left"}`}>
+            <div ref={quoteCardRef} className={`max-w-4xl bg-white/80 md:backdrop-blur-md rounded-3xl p-6 sm:p-12 border border-[#c9a84c]/40 shadow-[0_20px_50px_rgba(140,110,45,0.14)] flex flex-col ${textAlign === "center" ? "mx-auto items-center text-center" : textAlign === "right" ? "ml-auto items-end text-right" : "items-start text-left"}`}>
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#faf6ed] border border-[#c9a84c]/45 mb-4 sm:mb-6 flex items-center justify-center text-[#8b6914]">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M10 7H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2H5v2h1a4 4 0 0 0 4-4V7zm10 0h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2h-1v2h1a4 4 0 0 0 4-4V7z" />

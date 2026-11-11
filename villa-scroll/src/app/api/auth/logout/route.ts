@@ -6,9 +6,13 @@ export async function POST(request: NextRequest) {
   deleteSessionByToken(token);
 
   const response = NextResponse.json({ ok: true });
+  const isHttps =
+    request.nextUrl.protocol === "https:" ||
+    request.headers.get("x-forwarded-proto") === "https";
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
+    secure: isHttps,
     expires: new Date(0),
     path: "/",
   });

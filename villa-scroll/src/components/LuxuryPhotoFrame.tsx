@@ -57,7 +57,7 @@ export default function LuxuryPhotoFrame({
     borderStyle === "gold-double"
       ? "bg-white/90 p-2 sm:p-2.5 border-2 border-[#b58b28] ring-2 ring-[#f2ca50]/45 shadow-[0_20px_55px_rgba(140,110,45,0.24)]"
       : borderStyle === "glass-glow"
-        ? "bg-white/65 backdrop-blur-xl p-1.5 sm:p-2 border border-[#f2ca50]/75 shadow-[0_0_32px_rgba(212,175,55,0.38)]"
+        ? "bg-white/65 md:backdrop-blur-md p-1.5 sm:p-2 border border-[#f2ca50]/75 shadow-[0_0_32px_rgba(212,175,55,0.38)]"
         : borderStyle === "minimal"
           ? "bg-white/95 p-1 border border-stone-200 shadow-md"
           : borderStyle === "none"
@@ -122,10 +122,10 @@ export default function LuxuryPhotoFrame({
           fill
           unoptimized={isDynamicSrc(src) || isCleanStaticFrame}
           sizes={sizes}
-          quality={100}
+          quality={85}
           priority={priority}
-          loading="eager"
-          decoding="sync"
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
           style={getImageFramingStyle(config, slotKey, defaultPosX, defaultPosY, defaultZoom)}
           className={`object-cover transition-transform duration-700 ease-out brightness-105 contrast-105 ${
             resolvedMotion === "hover-zoom" ? "group-hover:scale-105" : ""

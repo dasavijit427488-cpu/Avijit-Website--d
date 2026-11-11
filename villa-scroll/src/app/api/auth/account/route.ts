@@ -3,21 +3,33 @@ import {
   createUser,
   deleteSecondaryUser,
   getSessionUser,
+  getUserPasswordHash,
   listUsers,
+  pushUsersToCloud,
+  syncUsersFromCloud,
   updateUserAccount,
 } from "@/lib/auth";
-import { getAppSetting, setAppSetting } from "@/lib/db";
+import { isCloudKvConfigured, isServerlessRuntime } from "@/lib/cloudStore";
+import { getAppSettingCloud, setAppSettingCloud } from "@/lib/db";
+import { sendRealEmail } from "@/lib/email";
 
 export async function GET() {
+  await syncUsersFromCloud();
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const users = listUsers();
-  const smtpUser = getAppSetting("smtp_user") || process.env.SMTP_USER || "";
-  const hasDbSmtpPass = Boolean(getAppSetting("smtp_pass"));
+  const smtpUser = (await getAppSettingCloud("smtp_user")) || process.env.SMTP_USER || "";
+  const dbPass = await getAppSettingCloud("smtp_pass");
+  const hasDbSmtpPass = Boolean(dbPass);
   const hasEnvSmtpPass = Boolean(process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS);
+  const passwordHash = getUserPasswordHash(user.id);
+  const isEnvLocked = Boolean(
+    process.env.ADMIN_USERNAME &&
+      (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD_HASH)
+  );
 
   return NextResponse.json({
     ok: true,
@@ -27,6 +39,12 @@ export async function GET() {
       smtpUser,
       hasDbSmtpPass,
       hasEnvSmtpPass,
+    },
+    deployment: {
+      isServerless: isServerlessRuntime(),
+      cloudSynced: !isServerlessRuntime() || isCloudKvConfigured(),
+      isEnvLocked,
+      passwordHash,
     },
   });
 }
@@ -40,18 +58,33 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
 
+    if (body?.action === "test_smtp") {
+      const savedSmtpUser = await getAppSettingCloud("smtp_user");
+      const targetEmail = String(body?.toEmail || user.email || savedSmtpUser || process.env.SMTP_USER || "").trim();
+      if (!targetEmail) {
+        return NextResponse.json({ ok: false, error: "Provide an email address to test." }, { status: 400 });
+      }
+      const res = await sendRealEmail({
+        to: targetEmail,
+        subject: "Avijit Villa — Email Delivery Test Successful",
+        text: "Your website real-email delivery (Contact Form & Admin Password Reset Code) is active and working properly.",
+        html: "<div style='font-family:sans-serif;padding:20px;border:1px solid #d4af37;border-radius:12px;'><h2>Email Delivery Active</h2><p>Your Avijit Villa Contact Form &amp; Password Reset OTP email delivery is working properly.</p></div>",
+      });
+      return NextResponse.json({ ok: res.dispatched, message: res.message }, { status: res.dispatched ? 200 : 400 });
+    }
+
     if (body?.action === "update_smtp") {
       const smtpUser = String(body?.smtpUser ?? "").trim();
       const smtpPass = String(body?.smtpPass ?? "").trim();
-      setAppSetting("smtp_user", smtpUser);
+      await setAppSettingCloud("smtp_user", smtpUser);
       if (smtpPass !== "__KEEP__") {
-        setAppSetting("smtp_pass", smtpPass);
+        await setAppSettingCloud("smtp_pass", smtpPass);
       }
       return NextResponse.json({
         ok: true,
         smtp: {
           smtpUser,
-          hasDbSmtpPass: Boolean(getAppSetting("smtp_pass")),
+          hasDbSmtpPass: Boolean(await getAppSettingCloud("smtp_pass")),
           hasEnvSmtpPass: Boolean(process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS),
         },
       });
@@ -64,6 +97,7 @@ export async function PATCH(request: NextRequest) {
       email: body?.email !== undefined ? String(body.email) : undefined,
       newPassword: body?.newPassword !== undefined ? String(body.newPassword) : undefined,
     });
+    await pushUsersToCloud();
 
     return NextResponse.json({ ok: true, user: updated });
   } catch (err) {
@@ -89,6 +123,7 @@ export async function POST(request: NextRequest) {
       password: String(body?.password ?? ""),
       role: "client",
     });
+    await pushUsersToCloud();
     return NextResponse.json({ ok: true, created });
   } catch (err) {
     return NextResponse.json(

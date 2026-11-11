@@ -64,7 +64,7 @@ export function useLenis() {
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 120);
+    }, 450);
 
     return () => {
       clearTimeout(timer);

@@ -83,8 +83,8 @@ export default function ContactSection() {
       const ctx = gsap.context(() => {
         const replayTrigger = (triggerEl: Element | null) => ({
           trigger: triggerEl,
-          start: "top 102%",
-          toggleActions: "play none none reset",
+          start: "top 92%",
+          toggleActions: "play none none none",
         });
 
         const animEl = (
@@ -96,14 +96,15 @@ export default function ContactSection() {
           const off = getMotionOffset(anim, defFrom);
           gsap.fromTo(
             target,
-            { opacity: 0, x: off.x, y: off.y, scale: off.scale },
+            { opacity: 0, x: off.x, y: off.y, scale: off.scale, force3D: true },
             {
               opacity: 1,
               x: 0,
               y: 0,
               scale: 1,
+              force3D: true,
               duration: dur * spd,
-              ease: "power2.out",
+              ease: "power3.out",
               scrollTrigger: replayTrigger(triggerEl),
             }
           );
@@ -126,10 +127,7 @@ export default function ContactSection() {
         }
       }, el);
 
-      const refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 300);
-
       return () => {
-        clearTimeout(refreshTimer);
         ctx.revert();
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       };
@@ -184,6 +182,46 @@ export default function ContactSection() {
       }
     } catch {
       providerMessage = "Offline fallback ready.";
+    }
+
+    // Browser-side real email relay if server SMTP/Resend wasn't configured yet on Vercel
+    if (!emailDispatched && c.ownerEmail) {
+      const isSameEmail = email.toLowerCase() === c.ownerEmail.toLowerCase();
+      try {
+        const fsRes = await fetch(
+          `https://formsubmit.co/ajax/${encodeURIComponent(c.ownerEmail)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              message: requirement,
+              _subject: `New Inquiry — ${name}`,
+              ...(!isSameEmail ? { _replyto: email } : {}),
+              _template: "box",
+              "Customer Name": name,
+              "Customer Email": email,
+              "Client Requirement": requirement,
+            }),
+          }
+        );
+        const fsJson = await fsRes.json().catch(() => null);
+        if (
+          fsRes.ok &&
+          (fsJson?.success === true || fsJson?.success === "true")
+        ) {
+          emailDispatched = true;
+          providerMessage = `Delivered directly to ${c.ownerEmail}.`;
+        } else if (fsJson?.message && !providerMessage) {
+          providerMessage = String(fsJson.message);
+        }
+      } catch {
+        // Keep Gmail / Email app & WhatsApp fallback ready
+      }
     }
 
     setSubmittedRelay({
@@ -264,7 +302,7 @@ export default function ContactSection() {
               </div>
 
               {/* Estate Summary Callout Bento */}
-              <div className="lg:col-span-4 rounded-2xl p-5 sm:p-6 backdrop-blur-xl bg-white/85 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.12)] flex flex-col justify-between gap-4">
+              <div className="lg:col-span-4 rounded-2xl p-5 sm:p-6 md:backdrop-blur-md bg-white/85 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.12)] flex flex-col justify-between gap-4">
                 <div className="flex items-center justify-between pb-2.5 border-b border-[#c9a84c]/25">
                   <span className="text-xs text-[#8b6914] uppercase tracking-widest font-semibold">
                     {c.estateSummaryTitle}
@@ -296,7 +334,7 @@ export default function ContactSection() {
         <div className="w-full px-4 sm:px-6 md:px-20 pb-10 sm:pb-14">
           <div ref={advisoryGridRef} className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
             {/* Left Card: Private Office Advisory */}
-            <div className="lg:col-span-6 rounded-2xl sm:rounded-3xl p-5 sm:p-9 backdrop-blur-xl bg-white/85 border border-[#c9a84c]/40 shadow-[0_20px_50px_rgba(140,110,45,0.14)] flex flex-col justify-between gap-5 sm:gap-6">
+            <div className="lg:col-span-6 rounded-2xl sm:rounded-3xl p-5 sm:p-9 md:backdrop-blur-md bg-white/85 border border-[#c9a84c]/40 shadow-[0_20px_50px_rgba(140,110,45,0.14)] flex flex-col justify-between gap-5 sm:gap-6">
               <div>
                 <div className="flex items-center justify-between border-b border-[#c9a84c]/25 pb-3.5 sm:pb-4 mb-4 sm:mb-5">
                   <span className="text-xs text-[#8b6914] uppercase tracking-[0.18em] font-semibold flex items-center gap-2">
@@ -346,10 +384,9 @@ export default function ContactSection() {
                             fill
                             unoptimized={isDynamicSrc(c.architectAvatarUrl || "/images/avijit-dp.jpg")}
                             sizes="96px"
-                            quality={100}
-                            priority
-                            loading="eager"
-                            decoding="sync"
+                            quality={95}
+                            loading="lazy"
+                            decoding="async"
                             style={getImageFramingStyle(config, "contact.avatar", 50, 20, 106)}
                             className="object-cover transition-transform duration-500 contrast-105 brightness-105"
                           />
@@ -467,7 +504,6 @@ export default function ContactSection() {
               src={c.showcaseImage || "/images/house-view-2.jpg"}
               alt={c.showcaseAlt}
               sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
               outerClassName="lg:col-span-6 rounded-2xl sm:rounded-3xl min-h-[240px] sm:min-h-[360px]"
               innerHeightClass="h-full min-h-[224px] sm:min-h-[344px]"
             />
@@ -478,7 +514,7 @@ export default function ContactSection() {
         <div className="w-full px-4 sm:px-6 md:px-20 pb-10 sm:pb-14">
           <div
             ref={formBlockRef}
-            className="max-w-7xl mx-auto rounded-2xl sm:rounded-3xl p-5 sm:p-10 backdrop-blur-xl bg-white/88 border border-[#c9a84c]/45 shadow-[0_20px_50px_rgba(140,110,45,0.14)]"
+            className="max-w-7xl mx-auto rounded-2xl sm:rounded-3xl p-5 sm:p-10 md:backdrop-blur-md bg-white/88 border border-[#c9a84c]/45 shadow-[0_20px_50px_rgba(140,110,45,0.14)]"
           >
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 mb-7 border-b border-[#c9a84c]/25">
               <div>
@@ -627,7 +663,7 @@ export default function ContactSection() {
 
         {/* 3. INTERACTIVE LOCATION ANCHOR STRIP */}
         <div className="w-full px-4 sm:px-6 md:px-20 pb-12 sm:pb-16">
-          <div ref={locationBarRef} className="max-w-7xl mx-auto rounded-2xl p-5 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 backdrop-blur-xl bg-white/85 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.14)] hover:shadow-[0_24px_55px_rgba(140,110,45,0.2)] transition-shadow duration-500">
+          <div ref={locationBarRef} className="max-w-7xl mx-auto rounded-2xl p-5 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 md:backdrop-blur-md bg-white/85 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.14)] hover:shadow-[0_24px_55px_rgba(140,110,45,0.2)] transition-shadow duration-500">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-[#faf6ed] border border-[#c9a84c]/50 text-[#8b6914] flex items-center justify-center shrink-0 shadow-sm">
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -662,7 +698,7 @@ export default function ContactSection() {
         </div>
 
         {/* 4. LUXURY COMPACT FOOTER STRIP */}
-        <footer className="w-full bg-white/80 backdrop-blur-xl border-t border-[#c9a84c]/30 px-6 md:px-20 py-5">
+        <footer className="w-full bg-white/80 md:backdrop-blur-md border-t border-[#c9a84c]/30 px-6 md:px-20 py-5">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#4a4236]">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-[#c9a84c]" />
@@ -707,7 +743,7 @@ export default function ContactSection() {
           toastMsg ? "translate-y-0 opacity-100" : "translate-y-24 opacity-0"
         }`}
       >
-        <div className="backdrop-blur-xl bg-white/95 px-5 py-3 rounded-xl border border-[#c9a84c] text-[#8b6914] text-xs font-semibold flex items-center gap-3 shadow-xl">
+        <div className="md:backdrop-blur-md bg-white/95 px-5 py-3 rounded-xl border border-[#c9a84c] text-[#8b6914] text-xs font-semibold flex items-center gap-3 shadow-xl">
           <span>{toastMsg}</span>
         </div>
       </div>
@@ -755,7 +791,7 @@ export default function ContactSection() {
                     {brand.brandFirstLetter}{brand.brandMiddleText} {brand.brandLastWord} Concierge
                   </span>
                   <h4 className="text-xl sm:text-2xl font-bold text-[#fff9ee] tracking-tight mt-0.5">
-                    {submittedRelay.emailDispatched ? "Email Delivered!" : "Inquiry Ready to Send"}
+                    {submittedRelay.emailDispatched ? "Sent to Gmail Inbox!" : "Inquiry Saved"}
                   </h4>
                 </div>
               </div>
@@ -767,18 +803,20 @@ export default function ContactSection() {
                 <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   <span>
-                    Formatted inquiry sent cleanly to{" "}
+                    Formatted inquiry delivered directly to{" "}
                     <strong className="font-bold">{c.ownerEmail}</strong>.
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-1 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-300/70 text-amber-950 text-xs leading-relaxed">
                   <span className="font-bold uppercase tracking-wider text-[10px] text-[#8b6914]">
-                    Saved to Database &bull; Optional Email Setup
+                    Inquiry Recorded &bull; Instant Gmail Dispatch Available
                   </span>
                   <span>
-                    {submittedRelay.providerMessage ||
-                      `Your inquiry is saved securely. Configure Gmail App Password in Admin → Account & SMTP for instant inbox push to ${c.ownerEmail}, or use Send via Email App below.`}
+                    {submittedRelay.providerMessage &&
+                    submittedRelay.providerMessage.toLowerCase().includes("activation")
+                      ? `Form activation link was sent to ${c.ownerEmail} — click Activate once in Gmail to enable instant auto-forwarding, or click Open in Gmail below.`
+                      : `Your message is saved for ${c.ownerEmail}. Tap Open in Gmail below to send directly or connect on WhatsApp.`}
                   </span>
                 </div>
               )}
@@ -818,10 +856,12 @@ export default function ContactSection() {
               <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
                 {!submittedRelay.emailDispatched && (
                   <a
-                    href={submittedRelay.mailtoUrl}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(c.ownerEmail)}&su=${encodeURIComponent(`New Inquiry — ${submittedRelay.name}`)}&body=${encodeURIComponent(`Name: ${submittedRelay.name}\nEmail: ${submittedRelay.email}\n\nRequirement:\n${submittedRelay.requirement}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex-1 px-4 py-3 rounded-xl bg-[#15120d] hover:bg-[#2a241b] text-[#f2ca50] text-xs font-bold uppercase tracking-wider text-center shadow-sm transition-all"
                   >
-                    Send via Email App
+                    Open in Gmail
                   </a>
                 )}
                 <a

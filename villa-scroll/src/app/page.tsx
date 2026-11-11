@@ -1,21 +1,24 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import CanvasSequence from "@/components/CanvasSequence";
 import HeroOverlay from "@/components/HeroOverlay";
 import InteriorOverlays from "@/components/InteriorOverlays";
 import FloatingNav from "@/components/FloatingNav";
 import VisualEffects from "@/components/VisualEffects";
-import MarbleScrollBackdrop from "@/components/MarbleScrollBackdrop";
-import MaterialitySection from "@/components/MaterialitySection";
-import FloorplanExplorer from "@/components/FloorplanExplorer";
-import ContactSection from "@/components/ContactSection";
-import InquiryModal from "@/components/InquiryModal";
 import { useSiteConfig } from "@/context/SiteConfigContext";
 import type { SitePageId } from "@/lib/defaultSiteConfig";
 
-const TOTAL_FRAMES = 479;
-const INITIAL_PRELOAD_COUNT = 60;
+// Code-split below-the-fold heavy sections so initial opening loads in milliseconds
+const MarbleScrollBackdrop = dynamic(() => import("@/components/MarbleScrollBackdrop"));
+const MaterialitySection = dynamic(() => import("@/components/MaterialitySection"));
+const FloorplanExplorer = dynamic(() => import("@/components/FloorplanExplorer"));
+const ContactSection = dynamic(() => import("@/components/ContactSection"));
+const InquiryModal = dynamic(() => import("@/components/InquiryModal"), { ssr: false });
+
+const TOTAL_FRAMES = 240;
+const INITIAL_PRELOAD_COUNT = 24;
 
 type RenderChunk =
   | { kind: "residence"; key: string }

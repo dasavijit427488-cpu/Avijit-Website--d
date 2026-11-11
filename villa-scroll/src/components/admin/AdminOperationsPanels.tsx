@@ -270,6 +270,7 @@ export function AccountAndSystemPanel({
   smtpUser,
   hasDbSmtpPass,
   hasEnvSmtpPass,
+  deploymentInfo,
   dbStats,
   onAccountUpdated,
   onRefreshAccount,
@@ -279,6 +280,11 @@ export function AccountAndSystemPanel({
   smtpUser: string;
   hasDbSmtpPass: boolean;
   hasEnvSmtpPass: boolean;
+  deploymentInfo: {
+    isServerless: boolean;
+    isEnvLocked: boolean;
+    passwordHash: string;
+  };
   dbStats: DbStatsInfo;
   onAccountUpdated: (u: AdminUserItem) => void;
   onRefreshAccount: () => Promise<void>;
@@ -375,10 +381,32 @@ export function AccountAndSystemPanel({
     const json = await res.json();
     if (res.ok && json?.ok) {
       setSmtpPassInput("");
-      setSmtpMsg("Gmail SMTP settings saved in SQLite database!");
+      setSmtpMsg("Gmail SMTP settings saved in database!");
       await onRefreshAccount();
     }
   };
+
+  const handleTestSmtp = async () => {
+    setSmtpMsg("Sending test email...");
+    const res = await fetch("/api/auth/account", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "test_smtp",
+        toEmail: currentUser.email || smtpUserInput,
+      }),
+    });
+    const json = await res.json();
+    setSmtpMsg(json?.ok ? json.message : json?.message || json?.error || "Test failed — verify Gmail App Password.");
+  };
+
+  const envSnippet = [
+    `ADMIN_USERNAME=${currentUser.username}`,
+    `ADMIN_PASSWORD_HASH=${deploymentInfo.passwordHash}`,
+    `ADMIN_EMAIL=${currentUser.email || smtpUserInput || "dasavijit427488@gmail.com"}`,
+    `SMTP_USER=${smtpUserInput || currentUser.email || "dasavijit427488@gmail.com"}`,
+    `GMAIL_APP_PASSWORD=YOUR_16_CHAR_GMAIL_APP_PASSWORD`,
+  ].join("\n");
 
   return (
     <div className="space-y-6">
@@ -530,13 +558,45 @@ export function AccountAndSystemPanel({
             />
           </div>
           {smtpMsg && <div className="text-xs text-emerald-700 font-semibold">{smtpMsg}</div>}
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-xl border border-[#c9a84c] text-[#8b6914] hover:bg-[#faf6ed] text-xs font-bold uppercase tracking-wider cursor-pointer"
-          >
-            Save SMTP Settings
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl border border-[#c9a84c] text-[#8b6914] hover:bg-[#faf6ed] text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              Save SMTP Settings
+            </button>
+            <button
+              type="button"
+              onClick={handleTestSmtp}
+              className="px-4 py-2 rounded-xl bg-[#15120d] text-[#f2ca50] hover:brightness-110 text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              Send Test Email Now
+            </button>
+          </div>
         </form>
+      </AdminSectionCard>
+
+      <AdminSectionCard
+        title="Vercel / Netlify Permanent Admin & Email Lock"
+        subtitle={
+          deploymentInfo.isEnvLocked
+            ? "Locked permanently via Environment Variables — nobody can reset or bypass Admin setup across Vercel cold restarts."
+            : "Add these Environment Variables in Vercel → Project Settings → Environment Variables so your User ID, Password & Gmail Email delivery stay permanently locked across every serverless cold start."
+        }
+      >
+        <div className="text-xs text-[#574e40] bg-[#fcf9f2] p-3.5 rounded-xl border border-[#e5d5aa] font-mono whitespace-pre-wrap break-all select-all">
+          {envSnippet}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(envSnippet);
+            setSmtpMsg("Copied Vercel Environment Variables!");
+          }}
+          className="px-4 py-2 rounded-xl border border-[#c9a84c] text-[#8b6914] hover:bg-[#faf6ed] text-xs font-bold uppercase tracking-wider cursor-pointer"
+        >
+          Copy Env Vars for Vercel
+        </button>
       </AdminSectionCard>
     </div>
   );

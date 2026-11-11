@@ -28,8 +28,8 @@ interface CanvasSequenceProps {
   children?: ReactNode;
 }
 
-const TOTAL_FRAMES_DEFAULT = 479;
-const MOBILE_FRAMES_COUNT = 240;
+const TOTAL_FRAMES_DEFAULT = 240;
+const MOBILE_FRAMES_COUNT = 160;
 const MOBILE_PREFIX = "/frames-mobile/frame_";
 
 export default function CanvasSequence({
@@ -57,14 +57,15 @@ export default function CanvasSequence({
   const currentTargetFrameRef = useRef<number>(1);
   const lastDrawnFrameRef = useRef<number>(-1);
   const fallbackImgRef = useRef<HTMLImageElement | null>(null);
-  const inFlightCountRef = useRef<number>(0);
+  const bgInFlightRef = useRef<number>(0);
+  const priorityInFlightRef = useRef<number>(0);
+  const priorityControllersRef = useRef<Map<number, AbortController>>(new Map());
   const isScrollingRef = useRef<boolean>(false);
 
   const getFramePath = useCallback(
     (index: number) => {
       const padded = String(index).padStart(4, "0");
-      const v = isMobileRef.current ? "clean4" : "clean3";
-      return `${activePrefixRef.current}${padded}${frameExtension}?v=${v}`;
+      return `${activePrefixRef.current}${padded}${frameExtension}?v=clean7`;
     },
     [frameExtension]
   );
@@ -76,7 +77,7 @@ export default function CanvasSequence({
     const ctx = canvas.getContext("2d", { alpha: false });
     if (ctx) {
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = isMobileRef.current ? "low" : "high";
+      ctx.imageSmoothingQuality = isMobileRef.current ? "low" : "medium";
       ctxRef.current = ctx;
     }
     return ctx;
@@ -142,11 +143,10 @@ export default function CanvasSequence({
     [getCanvasContext]
   );
 
-  // Mobile VRAM safeguard: evicts & closes distant ImageBitmaps outside ±55 frames (~110 active frames)
-  const evictDistantMobileFrames = useCallback((centerFrame: number) => {
-    if (!isMobileRef.current) return;
+  // VRAM safeguard: evicts & closes distant ImageBitmaps outside active window on both mobile & desktop
+  const evictDistantFrames = useCallback((centerFrame: number) => {
     const total = activeTotalRef.current;
-    const keepRadius = 55;
+    const keepRadius = isMobileRef.current ? 65 : 85;
     for (let i = 1; i <= total; i++) {
       if (Math.abs(i - centerFrame) > keepRadius && imagesRef.current[i]) {
         const item = imagesRef.current[i];
@@ -168,37 +168,53 @@ export default function CanvasSequence({
       }
       if (isPendingMapRef.current[index]) return Promise.resolve(null);
 
-      const maxBgConcurrent = isMobileRef.current ? 3 : 4;
-      const maxPriorityConcurrent = isMobileRef.current ? 5 : 12;
-      if (!isPriority && inFlightCountRef.current >= maxBgConcurrent) {
+      // Cancel stale scroll-priority fetches >18 frames away so current scroll position never waits behind old requests
+      if (isPriority) {
+        for (const [pendingIdx, ctrl] of priorityControllersRef.current.entries()) {
+          if (Math.abs(pendingIdx - currentTargetFrameRef.current) > 18) {
+            ctrl.abort();
+            priorityControllersRef.current.delete(pendingIdx);
+          }
+        }
+      }
+
+      const maxBgConcurrent = isMobileRef.current ? 2 : 3;
+      const maxPriorityConcurrent = isMobileRef.current ? 4 : 5;
+      if (!isPriority && bgInFlightRef.current >= maxBgConcurrent) {
         return Promise.resolve(null);
       }
-      if (isPriority && inFlightCountRef.current >= maxPriorityConcurrent) {
+      if (isPriority && priorityInFlightRef.current >= maxPriorityConcurrent) {
         return Promise.resolve(null);
       }
 
       isPendingMapRef.current[index] = true;
-      inFlightCountRef.current++;
+      const counterRef = isPriority ? priorityInFlightRef : bgInFlightRef;
+      counterRef.current++;
 
       const url = getFramePath(index);
 
-      // Mobile off-main-thread WebP decoding via createImageBitmap eliminates UI/scroll decode lag
-      if (isMobileRef.current && typeof createImageBitmap === "function") {
-        return fetch(url)
+      // Off-main-thread WebP decoding via createImageBitmap eliminates UI/scroll decode lag on both Mobile & Desktop
+      if (typeof createImageBitmap === "function") {
+        const controller = isPriority ? new AbortController() : null;
+        if (controller) priorityControllersRef.current.set(index, controller);
+
+        return fetch(url, controller ? { signal: controller.signal } : undefined)
           .then((res) => {
             if (!res.ok) throw new Error("Frame fetch failed");
             return res.blob();
           })
           .then((blob) => createImageBitmap(blob))
           .then((bitmap) => {
-            inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+            if (controller) priorityControllersRef.current.delete(index);
+            counterRef.current = Math.max(0, counterRef.current - 1);
             isPendingMapRef.current[index] = false;
             imagesRef.current[index] = bitmap;
             isLoadedMapRef.current[index] = true;
             return bitmap;
           })
           .catch(() => {
-            inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+            if (controller) priorityControllersRef.current.delete(index);
+            counterRef.current = Math.max(0, counterRef.current - 1);
             isPendingMapRef.current[index] = false;
             return null;
           });
@@ -210,7 +226,7 @@ export default function CanvasSequence({
         img.src = url;
 
         const done = (ok: boolean) => {
-          inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+          counterRef.current = Math.max(0, counterRef.current - 1);
           isPendingMapRef.current[index] = false;
           if (ok) {
             imagesRef.current[index] = img;
@@ -245,7 +261,7 @@ export default function CanvasSequence({
 
       const total = activeTotalRef.current;
       const sign = dir >= 0 ? 1 : -1;
-      const lookAhead = isMobileRef.current ? 5 : 8;
+      const lookAhead = isMobileRef.current ? 4 : 5;
 
       for (let i = 1; i <= lookAhead; i++) {
         const idx = centerFrame + i * sign;
@@ -254,13 +270,12 @@ export default function CanvasSequence({
         }
       }
 
-      const evictStep = isMobileRef.current ? 24 : 40;
-      if (isMobileRef.current && Math.abs(centerFrame - lastEvictCenterRef.current) > evictStep) {
+      if (Math.abs(centerFrame - lastEvictCenterRef.current) > 20) {
         lastEvictCenterRef.current = centerFrame;
-        evictDistantMobileFrames(centerFrame);
+        evictDistantFrames(centerFrame);
       }
     },
-    [loadImage, evictDistantMobileFrames]
+    [loadImage, evictDistantFrames]
   );
 
   const renderFrame = useCallback(
@@ -279,24 +294,33 @@ export default function CanvasSequence({
       }
 
       loadImage(targetFrame, true).then((loaded) => {
-        if (loaded && Math.abs(currentTargetFrameRef.current - targetFrame) <= 2) {
+        if (loaded && Math.abs(currentTargetFrameRef.current - targetFrame) <= 3) {
           drawFrameImage(loaded, targetFrame);
         }
       });
 
+      // Outward nearest-keyframe search across full sequence guarantees instant zero-freeze visual response
       const total = activeTotalRef.current;
-      for (let step = 1; step <= 20; step++) {
-        const candidate = targetFrame - step * dir;
+      for (let step = 1; step < total; step++) {
+        const back = targetFrame - step * dir;
         if (
-          candidate >= 1 &&
-          candidate <= total &&
-          imagesRef.current[candidate] &&
-          isLoadedMapRef.current[candidate] &&
-          (lastDrawnFrameRef.current < 1 ||
-            (dir > 0 ? candidate >= lastDrawnFrameRef.current : candidate <= lastDrawnFrameRef.current))
+          back >= 1 &&
+          back <= total &&
+          imagesRef.current[back] &&
+          isLoadedMapRef.current[back]
         ) {
-          drawFrameImage(imagesRef.current[candidate]!, candidate);
-          break;
+          drawFrameImage(imagesRef.current[back]!, back);
+          return;
+        }
+        const ahead = targetFrame + step * dir;
+        if (
+          ahead >= 1 &&
+          ahead <= total &&
+          imagesRef.current[ahead] &&
+          isLoadedMapRef.current[ahead]
+        ) {
+          drawFrameImage(imagesRef.current[ahead]!, ahead);
+          return;
         }
       }
     },
@@ -334,7 +358,7 @@ export default function CanvasSequence({
       canvas.height = height;
       if (ctxRef.current) {
         ctxRef.current.imageSmoothingEnabled = true;
-        ctxRef.current.imageSmoothingQuality = isMob ? "low" : "high";
+        ctxRef.current.imageSmoothingQuality = isMob ? "low" : "medium";
       }
 
       const currentFrame = lastDrawnFrameRef.current > 0 ? lastDrawnFrameRef.current : 1;
@@ -360,34 +384,35 @@ export default function CanvasSequence({
     isPendingMapRef.current = new Array(total + 1).fill(false);
 
     let isCancelled = false;
+    let triggerEarlyPreload: (() => void) | null = null;
 
     const runOctavePreload = async () => {
+      // Wait briefly for initial paint & hero controls unless the user scrolls/touches immediately
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          cleanup();
+          resolve();
+        }, 320);
+        const wakeup = () => {
+          clearTimeout(timer);
+          cleanup();
+          resolve();
+        };
+        const cleanup = () => {
+          window.removeEventListener("scroll", wakeup);
+          window.removeEventListener("touchstart", wakeup);
+          window.removeEventListener("wheel", wakeup);
+        };
+        triggerEarlyPreload = wakeup;
+        window.addEventListener("scroll", wakeup, { once: true, passive: true });
+        window.addEventListener("touchstart", wakeup, { once: true, passive: true });
+        window.addEventListener("wheel", wakeup, { once: true, passive: true });
+      });
+      if (isCancelled) return;
+
       const first = await loadImage(1, true);
       if (isCancelled) return;
       if (first) drawFrameImage(first, 1);
-
-      const preloadLowerSectionAssets = () => {
-        [
-          "/images/white-marble.jpg",
-          "/images/house-view-1.jpg",
-          "/images/house-view-2.jpg",
-          "/images/house-view-3.jpg",
-          "/images/house-view-4.jpg",
-          "/images/house-view-5.jpg",
-        ].forEach((src) => {
-          const bgImg = new Image();
-          bgImg.decoding = "async";
-          bgImg.src = src;
-        });
-      };
-
-      if (!isMob) {
-        preloadLowerSectionAssets();
-      } else {
-        setTimeout(() => {
-          if (!isCancelled) preloadLowerSectionAssets();
-        }, 2500);
-      }
 
       const seen = new Set<number>([1]);
       const queue: number[] = [];
@@ -399,20 +424,21 @@ export default function CanvasSequence({
         }
       };
 
-      const openSlice = isMob ? 24 : Math.min(initialPreloadCount, total);
+      const openSlice = 6;
       for (let i = 1; i <= openSlice; i++) push(i);
-      for (let i = 1; i <= total; i += 8) push(i);
+      const keyStep = Math.max(1, Math.floor(total / 16));
+      for (let i = 1; i <= total; i += keyStep) push(i);
       for (let i = 1; i <= total; i += 4) push(i);
       for (let i = 1; i <= total; i += 2) push(i);
       for (let i = 1; i <= total; i += 1) push(i);
 
-      const batchSize = isMob ? 3 : 4;
-      const pauseMs = isMob ? 16 : 16;
+      const batchSize = isMob ? 2 : 3;
+      const pauseMs = isMob ? 32 : 28;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
         while (isScrollingRef.current && !isCancelled) {
-          await new Promise((r) => setTimeout(r, isMob ? 45 : 180));
+          await new Promise((r) => setTimeout(r, 120));
         }
         if (isCancelled) return;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
@@ -420,10 +446,16 @@ export default function CanvasSequence({
       }
     };
 
+    const controllers = priorityControllersRef.current;
     runOctavePreload();
 
     return () => {
       isCancelled = true;
+      if (triggerEarlyPreload) triggerEarlyPreload();
+      for (const ctrl of controllers.values()) {
+        ctrl.abort();
+      }
+      controllers.clear();
       for (let i = 0; i < imagesRef.current.length; i++) {
         const item = imagesRef.current[i];
         if (item && "close" in item && typeof item.close === "function") {
@@ -472,21 +504,10 @@ export default function CanvasSequence({
 
     const markScrolling = () => {
       isScrollingRef.current = true;
-      if (!isMobileRef.current && ctxRef.current && ctxRef.current.imageSmoothingQuality !== "low") {
-        ctxRef.current.imageSmoothingQuality = "low";
-      }
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         isScrollingRef.current = false;
-        if (!isMobileRef.current && ctxRef.current) {
-          ctxRef.current.imageSmoothingQuality = "high";
-          const settledFrame = lastDrawnFrameRef.current;
-          const img = settledFrame > 0 ? imagesRef.current[settledFrame] : null;
-          if (img && isLoadedMapRef.current[settledFrame]) {
-            drawFrameImage(img, settledFrame);
-          }
-        }
-      }, 200);
+      }, 180);
 
       if (!rafPending) {
         rafPending = true;
@@ -521,14 +542,17 @@ export default function CanvasSequence({
         style={{ height: containerHeight, touchAction: "pan-y" }}
       >
         <div className="sticky top-0 h-[100lvh] sm:h-[100dvh] w-full overflow-hidden bg-black flex items-center justify-center pointer-events-none">
-          <img
-            ref={fallbackImgRef}
-            src="/frames-opt/frame_0001.webp?v=clean3"
-            alt="Avijit Villa"
-            fetchPriority="high"
-            decoding="sync"
-            className="absolute inset-0 z-[2] w-full h-full object-cover pointer-events-none"
-          />
+          <picture className="contents">
+            <source media="(max-width: 767px)" srcSet="/frames-mobile/frame_0001.webp?v=clean7" />
+            <img
+              ref={fallbackImgRef}
+              src="/frames-opt/frame_0001.webp?v=clean7"
+              alt="Avijit Villa"
+              fetchPriority="high"
+              decoding="sync"
+              className="absolute inset-0 z-[2] w-full h-full object-cover pointer-events-none"
+            />
+          </picture>
 
           <canvas
             ref={canvasRef}

@@ -28,8 +28,9 @@ export default function InquiryModal({ isOpen, onClose }: InquiryModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
+    let sent = false;
     try {
-      await fetch("/api/contact", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,12 +44,46 @@ export default function InquiryModal({ isOpen, onClose }: InquiryModalProps) {
             `Private viewing request (${formData.arrival})`,
         }),
       });
+      if (res.ok) {
+        const j = await res.json().catch(() => null);
+        sent = Boolean(j?.emailDispatched);
+      }
     } catch {
       // Fall through cleanly
-    } finally {
-      setIsSending(false);
-      setIsSubmitted(true);
     }
+
+    if (!sent && c.ownerEmail) {
+      const isSameEmail = formData.email.trim().toLowerCase() === c.ownerEmail.trim().toLowerCase();
+      try {
+        await fetch(
+          `https://formsubmit.co/ajax/${encodeURIComponent(c.ownerEmail)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              name: formData.name,
+              email: formData.email,
+              message: formData.notes.trim() || "Private viewing request",
+              _subject: `Private Viewing Request — ${formData.name}`,
+              ...(!isSameEmail ? { _replyto: formData.email } : {}),
+              _template: "box",
+              Name: formData.name,
+              Email: formData.email,
+              Phone: formData.phone,
+              Arrival: formData.arrival,
+              Notes: formData.notes.trim() || "Private viewing request",
+            }),
+          }
+        );
+      } catch {
+        // Ignore
+      }
+    }
+    setIsSending(false);
+    setIsSubmitted(true);
   };
 
   return (

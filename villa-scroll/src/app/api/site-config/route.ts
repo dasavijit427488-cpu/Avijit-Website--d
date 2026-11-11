@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
-  getSiteConfig,
-  resetAllSiteConfig,
-  saveAllSiteConfig,
-  saveSiteSection,
+  getSiteConfigCloud,
+  resetAllSiteConfigCloud,
+  saveAllSiteConfigCloud,
+  saveSiteSectionCloud,
 } from "@/lib/db";
 import type { SiteConfig } from "@/lib/defaultSiteConfig";
 
 export async function GET() {
   try {
-    const config = getSiteConfig();
+    const { config, cloudSynced, isServerless } = await getSiteConfigCloud();
     return NextResponse.json(
-      { ok: true, config },
+      { ok: true, config, cloudSynced, isServerless },
       {
         headers: {
           "Cache-Control": "no-store, max-age=0",
@@ -30,7 +30,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Unauthorized — Please sign in again." }, { status: 401 });
   }
 
   try {
@@ -50,12 +50,12 @@ export async function PUT(request: NextRequest) {
       if (!validKeys.includes(sectionKey)) {
         return NextResponse.json({ ok: false, error: "Invalid section key." }, { status: 400 });
       }
-      saveSiteSection(sectionKey, body.data, user.username);
-      return NextResponse.json({ ok: true, config: getSiteConfig() });
+      const res = await saveSiteSectionCloud(sectionKey, body.data, user.username);
+      return NextResponse.json({ ok: true, ...res });
     }
 
-    const updated = saveAllSiteConfig(body?.config ?? body ?? {}, user.username);
-    return NextResponse.json({ ok: true, config: updated });
+    const res = await saveAllSiteConfigCloud(body?.config ?? body ?? {}, user.username);
+    return NextResponse.json({ ok: true, ...res });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : "Failed to save site config." },
@@ -67,14 +67,14 @@ export async function PUT(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Unauthorized — Please sign in again." }, { status: 401 });
   }
 
   try {
     const body = await request.json().catch(() => ({}));
     if (body?.action === "reset") {
-      const config = resetAllSiteConfig(user.username);
-      return NextResponse.json({ ok: true, config });
+      const res = await resetAllSiteConfigCloud(user.username);
+      return NextResponse.json({ ok: true, ...res });
     }
     return NextResponse.json({ ok: false, error: "Unsupported action." }, { status: 400 });
   } catch (err) {
@@ -84,4 +84,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

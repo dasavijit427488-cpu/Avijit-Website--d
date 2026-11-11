@@ -7,7 +7,11 @@ import {
   DEFAULT_SITE_CONFIG,
   type SiteConfig,
 } from "@/lib/defaultSiteConfig";
-import { useSiteConfig } from "@/context/SiteConfigContext";
+import {
+  CONFIG_CHANNEL_NAME,
+  PREVIEW_STORAGE_KEY,
+  useSiteConfig,
+} from "@/context/SiteConfigContext";
 import type { MediaAssetItem } from "./AdminHelpers";
 import {
   BrandEditor,
@@ -52,20 +56,11 @@ const TABS: { id: AdminTab; label: string; hint: string }[] = [
 export default function AdminDashboard() {
   const { setConfig: setGlobalConfig, refreshConfig } = useSiteConfig();
 
-  const [loading, setLoading] = useState(true);
-  const [needsSetup, setNeedsSetup] = useState(false);
   const [user, setUser] = useState<AdminUserItem | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("design");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Setup Form State
-  const [setupUsername, setSetupUsername] = useState("");
-  const [setupDisplayName, setSetupDisplayName] = useState("");
-  const [setupEmail, setSetupEmail] = useState("");
-  const [setupPassword, setSetupPassword] = useState("");
-  const [setupConfirm, setSetupConfirm] = useState("");
-
-  // Login Form State
+  // Strict Single Login State
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
@@ -80,6 +75,12 @@ export default function AdminDashboard() {
     smtpUser: "",
     hasDbSmtpPass: false,
     hasEnvSmtpPass: false,
+  });
+  const [deploymentInfo, setDeploymentInfo] = useState({
+    isServerless: false,
+    cloudSynced: true,
+    isEnvLocked: false,
+    passwordHash: "",
   });
   const [dbStats, setDbStats] = useState<DbStatsInfo>({
     usersCount: 0,
@@ -125,6 +126,7 @@ export default function AdminDashboard() {
       if (aJson?.ok) {
         setUsers(aJson.users || []);
         if (aJson.smtp) setSmtpInfo(aJson.smtp);
+        if (aJson.deployment) setDeploymentInfo(aJson.deployment);
         if (aJson.user) setUser(aJson.user);
       }
     }
@@ -134,64 +136,40 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Enforce fresh login on every visit AND invalidate session whenever leaving /admin
   useEffect(() => {
-    let active = true;
-    (async () => {
+    void fetch("/api/auth/logout", { method: "POST", cache: "no-store" }).catch(() => {});
+
+    const terminateAdminSession = () => {
       try {
-        const res = await fetch("/api/auth/status", { cache: "no-store" });
-        const json = await res.json();
-        if (!active) return;
-        setNeedsSetup(Boolean(json?.needsSetup));
-        if (json?.dbStats) setDbStats(json.dbStats);
-        if (json?.authenticated && json?.user) {
-          setUser(json.user);
-          await loadWorkspaceData();
+        if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+          navigator.sendBeacon("/api/auth/logout");
+        } else {
+          void fetch("/api/auth/logout", { method: "POST", keepalive: true });
         }
       } catch {
-        // Ignore network errors
-      } finally {
-        if (active) setLoading(false);
+        // Ignore navigation errors
       }
-    })();
-    return () => {
-      active = false;
     };
-  }, [loadWorkspaceData]);
 
-  const handleSetupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    if (setupPassword !== setupConfirm) {
-      setAuthError("Passwords do not match.");
-      return;
-    }
-    setAuthSubmitting(true);
-    try {
-      const res = await fetch("/api/auth/setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: setupUsername,
-          displayName: setupDisplayName,
-          email: setupEmail,
-          password: setupPassword,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok) {
-        setAuthError(json?.error || "Setup failed.");
-      } else {
-        setNeedsSetup(false);
-        setUser(json.user);
-        await loadWorkspaceData();
-        showToast("Admin account created & logged in!");
+    const handlePageShow = (ev: PageTransitionEvent) => {
+      if (ev.persisted) {
+        setUser(null);
+        setLoginUsername("");
+        setLoginPassword("");
+        void fetch("/api/auth/logout", { method: "POST", cache: "no-store" }).catch(() => {});
       }
-    } catch {
-      setAuthError("Network error while creating account.");
-    } finally {
-      setAuthSubmitting(false);
-    }
-  };
+    };
+
+    window.addEventListener("pagehide", terminateAdminSession);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("pagehide", terminateAdminSession);
+      window.removeEventListener("pageshow", handlePageShow);
+      terminateAdminSession();
+    };
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,6 +189,7 @@ export default function AdminDashboard() {
         setAuthError(json?.error || "Invalid User ID or Password.");
       } else {
         setUser(json.user);
+        setLoginUsername("");
         setLoginPassword("");
         await loadWorkspaceData();
       }
@@ -222,8 +201,10 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setUser(null);
+    setLoginUsername("");
+    setLoginPassword("");
   };
 
   const handleSaveAll = async () => {
@@ -235,11 +216,34 @@ export default function AdminDashboard() {
         body: JSON.stringify({ config: draft }),
       });
       const json = await res.json();
+      if (res.status === 401) {
+        setUser(null);
+        setAuthError("Session expired — please sign in again to save changes.");
+        return;
+      }
       if (res.ok && json?.ok) {
         setDraft(json.config);
         setGlobalConfig(json.config);
+        try {
+          if (json.cloudSynced) {
+            localStorage.removeItem(PREVIEW_STORAGE_KEY);
+          } else {
+            localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(json.config));
+          }
+          if (typeof BroadcastChannel !== "undefined") {
+            const ch = new BroadcastChannel(CONFIG_CHANNEL_NAME);
+            ch.postMessage({ config: json.config });
+            ch.close();
+          }
+        } catch {
+          // Ignore browser storage errors
+        }
         await refreshConfig();
-        showToast("All changes saved to SQLite database & published live!");
+        showToast(
+          json.cloudSynced
+            ? "All changes saved & published live across all devices!"
+            : "Saved to server & browser preview! Connect Upstash Redis in Vercel Storage for permanent cross-device sync."
+        );
       } else {
         showToast(json?.error || "Failed to save changes.");
       }
@@ -262,9 +266,23 @@ export default function AdminDashboard() {
         body: JSON.stringify({ action: "reset" }),
       });
       const json = await res.json();
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
       if (res.ok && json?.ok) {
         setDraft(json.config);
         setGlobalConfig(json.config);
+        try {
+          localStorage.removeItem(PREVIEW_STORAGE_KEY);
+          if (typeof BroadcastChannel !== "undefined") {
+            const ch = new BroadcastChannel(CONFIG_CHANNEL_NAME);
+            ch.postMessage({ config: json.config });
+            ch.close();
+          }
+        } catch {
+          // Ignore
+        }
         await refreshConfig();
         showToast("Website restored to original defaults.");
       }
@@ -273,18 +291,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="relative min-h-screen bg-[#f6efe0] text-[#1c1812] flex items-center justify-center font-playfair admin-playfair overflow-x-clip px-4">
-        <AdminBackdrop3D />
-        <div className="relative z-10 px-6 py-4 rounded-2xl bg-white/88 backdrop-blur-xl border border-[#c9a84c]/60 shadow-lg text-sm font-semibold uppercase tracking-[0.2em] text-[#8b6914] text-center">
-          Connecting to Database...
-        </div>
-      </div>
-    );
-  }
-
-  // First-Time Setup OR Client Login Gate (With Architectural Silk Grid + 3D Studio Objects)
+  // Strict Client Login Gate (Only User ID + Password — asks every time visiting /admin)
   if (!user) {
     return (
       <div className="relative min-h-screen bg-[#f6efe0] text-[#1c1812] font-playfair admin-playfair flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-clip">
@@ -293,152 +300,66 @@ export default function AdminDashboard() {
           <div className="bg-[#15120d] px-7 py-6 border-b-2 border-[#d4af37]">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase tracking-[0.24em] text-[#f2ca50] font-bold">
-                Avijit Villa CMS &bull; SQLite Database
+                Avijit Villa CMS
               </span>
               <Link href="/" className="text-[11px] text-[#e5dccb] hover:text-[#f2ca50] underline">
                 View Site
               </Link>
             </div>
             <h1 className="text-2xl font-bold text-[#fff9ec] mt-1.5">
-              {needsSetup ? "Create Client ID & Password" : "Client Admin Login"}
+              Client Admin Login
             </h1>
             <p className="text-xs text-[#cfc8bd] mt-1">
-              {needsSetup
-                ? "Set your own private User ID and Password to unlock full website customization."
-                : "Sign in with your User ID and Password to customize the entire website."}
+              Sign in with your User ID and Password to customize the website.
             </p>
           </div>
 
           <div className="p-7">
-            {needsSetup ? (
-              <form onSubmit={handleSetupSubmit} className="space-y-4">
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Set Your User ID *
-                  </span>
-                  <input
-                    required
-                    type="text"
-                    value={setupUsername}
-                    onChange={(e) => setSetupUsername(e.target.value)}
-                    placeholder="e.g. avijit or client_admin"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
+            <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
+                  User ID
+                </span>
+                <input
+                  required
+                  type="text"
+                  autoComplete="off"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="Enter your User ID"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
+                />
+              </label>
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Your Name
-                  </span>
-                  <input
-                    type="text"
-                    value={setupDisplayName}
-                    onChange={(e) => setSetupDisplayName(e.target.value)}
-                    placeholder="e.g. Avijit Das"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
+                  Password
+                </span>
+                <input
+                  required
+                  type="password"
+                  autoComplete="new-password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
+                />
+              </label>
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Email Address
-                  </span>
-                  <input
-                    type="email"
-                    value={setupEmail}
-                    onChange={(e) => setSetupEmail(e.target.value)}
-                    placeholder="you@gmail.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
+              {authError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
+                  {authError}
+                </div>
+              )}
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Set Password (Min 6 chars) *
-                  </span>
-                  <input
-                    required
-                    type="password"
-                    value={setupPassword}
-                    onChange={(e) => setSetupPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
-
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Confirm Password *
-                  </span>
-                  <input
-                    required
-                    type="password"
-                    value={setupConfirm}
-                    onChange={(e) => setSetupConfirm(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
-
-                {authError && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
-                    {authError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={authSubmitting}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f2ca50] hover:brightness-105 text-[#2b2000] text-xs font-bold uppercase tracking-[0.16em] shadow-md cursor-pointer disabled:opacity-60"
-                >
-                  {authSubmitting ? "Saving Account..." : "Set ID & Password & Enter Dashboard"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    User ID
-                  </span>
-                  <input
-                    required
-                    type="text"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
-                    placeholder="Enter your User ID"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
-
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#8b6914]">
-                    Password
-                  </span>
-                  <input
-                    required
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf6ed] border border-[#dcc484] focus:border-[#8b6914] focus:outline-none text-sm"
-                  />
-                </label>
-
-                {authError && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
-                    {authError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={authSubmitting}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f2ca50] hover:brightness-105 text-[#2b2000] text-xs font-bold uppercase tracking-[0.16em] shadow-md cursor-pointer disabled:opacity-60"
-                >
-                  {authSubmitting ? "Verifying..." : "Login to Customize Website"}
-                </button>
-              </form>
-            )}
+              <button
+                type="submit"
+                disabled={authSubmitting}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f2ca50] hover:brightness-105 text-[#2b2000] text-xs font-bold uppercase tracking-[0.16em] shadow-md cursor-pointer disabled:opacity-60"
+              >
+                {authSubmitting ? "Verifying..." : "Login"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -470,7 +391,12 @@ export default function AdminDashboard() {
                 Website Studio &amp; CMS
               </div>
               <div className="text-[10px] sm:text-[11px] text-[#f2ca50] truncate">
-                User: <strong>{user.username}</strong> &bull; {user.role}
+                User: <strong>{user.username}</strong> &bull; {user.role}{" "}
+                {deploymentInfo.isServerless && !deploymentInfo.cloudSynced && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-300/40 text-amber-200 text-[9px] uppercase">
+                    Temp Storage — Connect Vercel KV
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -761,6 +687,7 @@ export default function AdminDashboard() {
               smtpUser={smtpInfo.smtpUser}
               hasDbSmtpPass={smtpInfo.hasDbSmtpPass}
               hasEnvSmtpPass={smtpInfo.hasEnvSmtpPass}
+              deploymentInfo={deploymentInfo}
               dbStats={dbStats}
               onAccountUpdated={(updated) => setUser(updated)}
               onRefreshAccount={loadWorkspaceData}

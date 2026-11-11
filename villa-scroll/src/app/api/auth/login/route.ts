@@ -4,10 +4,12 @@ import {
   createSession,
   getUserCount,
   SESSION_COOKIE_NAME,
+  syncUsersFromCloud,
 } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
+    await syncUsersFromCloud();
     if (getUserCount() === 0) {
       return NextResponse.json(
         { ok: false, error: "No admin account created yet. Complete setup first." },
@@ -27,13 +29,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { rawToken, expiresAt } = createSession(user.id);
+    const { rawToken } = createSession(user.id, user);
     const response = NextResponse.json({ ok: true, user });
+    const isHttps =
+      request.nextUrl.protocol === "https:" ||
+      request.headers.get("x-forwarded-proto") === "https";
     response.cookies.set(SESSION_COOKIE_NAME, rawToken, {
       httpOnly: true,
       sameSite: "lax",
-      secure: request.nextUrl.protocol === "https:",
-      expires: expiresAt,
+      secure: isHttps,
       path: "/",
     });
     return response;

@@ -3,11 +3,15 @@ import {
   createSession,
   createUser,
   getUserCount,
+  pushUsersToCloud,
   SESSION_COOKIE_NAME,
+  syncUsersFromCloud,
 } from "@/lib/auth";
+import { isCloudKvConfigured, isServerlessRuntime } from "@/lib/cloudStore";
 
 export async function POST(request: NextRequest) {
   try {
+    await syncUsersFromCloud();
     if (getUserCount() > 0) {
       return NextResponse.json(
         { ok: false, error: "Initial setup is already completed. Please sign in." },
@@ -29,12 +33,22 @@ export async function POST(request: NextRequest) {
       role: "owner",
     });
 
-    const { rawToken, expiresAt } = createSession(user.id);
-    const response = NextResponse.json({ ok: true, user });
+    await pushUsersToCloud();
+
+    const { rawToken, expiresAt } = createSession(user.id, user);
+    const response = NextResponse.json({
+      ok: true,
+      user,
+      isServerless: isServerlessRuntime(),
+      cloudSynced: isCloudKvConfigured(),
+    });
+    const isHttps =
+      request.nextUrl.protocol === "https:" ||
+      request.headers.get("x-forwarded-proto") === "https";
     response.cookies.set(SESSION_COOKIE_NAME, rawToken, {
       httpOnly: true,
       sameSite: "lax",
-      secure: request.nextUrl.protocol === "https:",
+      secure: isHttps,
       expires: expiresAt,
       path: "/",
     });

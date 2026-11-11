@@ -63,8 +63,8 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
     const ctx = gsap.context(() => {
       const replayTrigger = (triggerEl: Element | null) => ({
         trigger: triggerEl,
-        start: "top 102%",
-        toggleActions: "play none none reset",
+        start: "top 92%",
+        toggleActions: "play none none none",
       });
 
       const animEl = (
@@ -77,16 +77,17 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
         const off = getMotionOffset(anim, defFrom);
         gsap.fromTo(
           target,
-          { opacity: 0, x: off.x, y: off.y, scale: off.scale },
+          { opacity: 0, x: off.x, y: off.y, scale: off.scale, force3D: true },
           {
             opacity: 1,
             x: 0,
             y: 0,
             scale: 1,
+            force3D: true,
             duration: dur * spd,
             ...(staggerOrDelay?.stagger ? { stagger: staggerOrDelay.stagger * spd } : {}),
             ...(staggerOrDelay?.delay ? { delay: staggerOrDelay.delay * spd } : {}),
-            ease: "power2.out",
+            ease: "power3.out",
             scrollTrigger: replayTrigger(triggerEl),
           }
         );
@@ -125,10 +126,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
       }
     }, el);
 
-    const refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 300);
-
     return () => {
-      clearTimeout(refreshTimer);
       ctx.revert();
     };
   }, [anim?.enabled, anim?.speed, anim?.directionMode]);
@@ -195,7 +193,6 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
                 src={mp.heroImage}
                 alt={mp.heroImageAlt}
                 sizes="100vw"
-                priority
                 outerClassName="rounded-2xl sm:rounded-3xl"
                 innerHeightClass="h-[220px] sm:h-[400px] md:h-[520px]"
               />
@@ -231,7 +228,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
                   <div
                     key={zone.id}
                     onClick={() => setActiveLevel(zone.id)}
-                    className={`group relative flex flex-col rounded-[26px] overflow-hidden transition-all duration-700 ease-out cursor-pointer p-2.5 backdrop-blur-xl bg-gradient-to-b from-white/95 via-[#fdfbf6]/90 to-[#f9f3e4]/90 border ${
+                    className={`group relative flex flex-col rounded-[26px] overflow-hidden transition-all duration-700 ease-out cursor-pointer p-2.5 md:backdrop-blur-md bg-gradient-to-b from-white/95 via-[#fdfbf6]/90 to-[#f9f3e4]/90 border ${
                       isSelected
                         ? "border-[#b58b28] ring-2 ring-[#c9a84c]/30 shadow-[0_26px_60px_rgba(140,110,45,0.26)] -translate-y-2.5"
                         : "border-[#c9a84c]/35 hover:border-[#b58b28] hover:-translate-y-2.5 shadow-[0_16px_40px_rgba(140,110,45,0.12)] hover:shadow-[0_24px_55px_rgba(140,110,45,0.22)]"
@@ -275,7 +272,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
         </div>
 
         {/* 3. ARCHITECTURAL WING SYSTEM */}
-        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 relative border-y border-[#c9a84c]/25 bg-white/30 backdrop-blur-[2px]">
+        <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 relative border-y border-[#c9a84c]/25 bg-white/30 md:backdrop-blur-[2px]">
           <div ref={levelSystemRef} className="max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4">
               <div>
@@ -323,7 +320,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
             </div>
 
             {/* Dynamic Wing Detailed Stage */}
-            <div ref={levelDetailRef} className="rounded-2xl sm:rounded-3xl p-4 sm:p-10 shadow-xl flex flex-col lg:flex-row gap-6 sm:gap-8 items-center bg-white/85 backdrop-blur-xl border border-[#c9a84c]/35">
+            <div ref={levelDetailRef} className="rounded-2xl sm:rounded-3xl p-4 sm:p-10 shadow-xl flex flex-col lg:flex-row gap-6 sm:gap-8 items-center bg-white/85 md:backdrop-blur-md border border-[#c9a84c]/35">
               {/* Interactive Blueprint Graphic */}
               <div className="w-full lg:w-3/5 bg-[#faf6ed] p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-[#c9a84c]/30 flex flex-col justify-between shadow-inner">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -416,7 +413,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
         {/* 4. ENVIRONMENTAL & BIOPHILIC HARMONY */}
         <div className="w-full px-4 sm:px-6 md:px-20 py-12 sm:py-16 relative">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 sm:gap-10 items-center">
-            <div ref={ecoLeftRef} className="w-full lg:w-5/12 flex flex-col bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-[#c9a84c]/35 shadow-lg hover:shadow-[0_20px_50px_rgba(140,110,45,0.16)] transition-shadow duration-500">
+            <div ref={ecoLeftRef} className="w-full lg:w-5/12 flex flex-col bg-white/80 md:backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-[#c9a84c]/35 shadow-lg hover:shadow-[0_20px_50px_rgba(140,110,45,0.16)] transition-shadow duration-500">
               <span className="text-xs text-[#8b6914] uppercase tracking-[0.2em] font-medium mb-2">
                 {mp.ecoKicker}
               </span>
@@ -447,7 +444,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
                 card.isRing ? (
                   <div
                     key={`${card.title}-${idx}`}
-                    className="group rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col items-center text-center backdrop-blur-xl bg-white/85 border border-[#c9a84c]/35 shadow-lg hover:-translate-y-1.5 hover:border-[#b58b28] hover:shadow-[0_22px_50px_rgba(140,110,45,0.2)] transition-all duration-500"
+                    className="group rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col items-center text-center md:backdrop-blur-md bg-white/85 border border-[#c9a84c]/35 shadow-lg hover:-translate-y-1.5 hover:border-[#b58b28] hover:shadow-[0_22px_50px_rgba(140,110,45,0.2)] transition-all duration-500"
                   >
                     <div className="relative w-20 h-20 sm:w-32 sm:h-32 flex items-center justify-center my-1 sm:my-2 group-hover:scale-105 transition-transform duration-500">
                       <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
@@ -484,7 +481,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
                 ) : (
                   <div
                     key={`${card.title}-${idx}`}
-                    className="group rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col justify-between backdrop-blur-xl bg-white/85 border border-[#c9a84c]/35 shadow-lg hover:-translate-y-1.5 hover:border-[#b58b28] hover:shadow-[0_22px_50px_rgba(140,110,45,0.2)] transition-all duration-500"
+                    className="group rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col justify-between md:backdrop-blur-md bg-white/85 border border-[#c9a84c]/35 shadow-lg hover:-translate-y-1.5 hover:border-[#b58b28] hover:shadow-[0_22px_50px_rgba(140,110,45,0.2)] transition-all duration-500"
                   >
                     <span className="text-[10px] sm:text-xs text-[#8b6914] font-medium uppercase tracking-wider">
                       {card.topLabel}
@@ -506,7 +503,7 @@ export default function FloorplanExplorer({ onInquireClick }: FloorplanExplorerP
 
         {/* 5. ARCHITECTURAL LAND SUMMARY STRIP */}
         <div className="w-full px-4 sm:px-6 md:px-20 pb-14 sm:pb-20">
-          <div ref={landSummaryRef} className="max-w-7xl mx-auto rounded-2xl sm:rounded-3xl bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-12 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.12)] grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-8 text-center md:text-left">
+          <div ref={landSummaryRef} className="max-w-7xl mx-auto rounded-2xl sm:rounded-3xl bg-white/85 md:backdrop-blur-md p-6 sm:p-8 md:p-12 border border-[#c9a84c]/40 shadow-[0_18px_45px_rgba(140,110,45,0.12)] grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-8 text-center md:text-left">
             {mp.landSummaryStats.map((stat, idx) => (
               <div key={`${stat.label}-${idx}`}>
                 <span className="text-[10px] sm:text-xs uppercase tracking-widest text-[#8b6914] font-medium block mb-1">
