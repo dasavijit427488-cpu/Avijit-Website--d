@@ -61,6 +61,7 @@ export default function CanvasSequence({
   const priorityInFlightRef = useRef<number>(0);
   const priorityControllersRef = useRef<Map<number, AbortController>>(new Map());
   const isScrollingRef = useRef<boolean>(false);
+  const lastScrollTimeRef = useRef<number>(0);
 
   const getFramePath = useCallback(
     (index: number) => {
@@ -442,6 +443,10 @@ export default function CanvasSequence({
       // 1. Initial entrance frames (immediate arrival)
       const openSlice = isMob ? 16 : 20;
       for (let i = 1; i <= openSlice; i++) push(i);
+      // Guarantee exit frames at the very end of the sequence are preloaded upfront so end never freezes
+      push(total);
+      push(total - 1);
+      push(total - 2);
       // 2. Uniform keyframe skeleton across whole villa (every 4th)
       for (let i = 1; i <= total; i += 4) push(i);
       // 3. Half-rate keyframes (every 2nd)
@@ -454,8 +459,9 @@ export default function CanvasSequence({
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        while (isScrollingRef.current && !isCancelled && i >= openSlice) {
-          await new Promise((r) => setTimeout(r, 120));
+        // Never compete with active scrolling or the deceleration settle phase
+        while (!isCancelled && (isScrollingRef.current || Date.now() - lastScrollTimeRef.current < 500) && i >= openSlice) {
+          await new Promise((r) => setTimeout(r, 100));
         }
         if (isCancelled) return;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
@@ -507,10 +513,11 @@ export default function CanvasSequence({
 
     const updateFrameLoop = () => {
       const isMob = isMobileRef.current;
-      const damping = isMob ? 0.38 : 0.28;
+      const damping = isMob ? 0.44 : 0.36;
       const diff = targetFrame - smoothedFrame;
 
-      if (Math.abs(diff) < 0.04) {
+      // When within 0.45 of a frame, settle immediately onto the final integer frame with zero trailing lag or stall
+      if (Math.abs(diff) < 0.45) {
         smoothedFrame = targetFrame;
         renderFrame(targetFrame);
         animRafId = 0;
@@ -524,10 +531,11 @@ export default function CanvasSequence({
 
     const onScroll = () => {
       isScrollingRef.current = true;
+      lastScrollTimeRef.current = Date.now();
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         isScrollingRef.current = false;
-      }, 160);
+      }, 180);
 
       const y = (window.scrollY || window.pageYOffset) - containerTop;
       if (y < -window.innerHeight || y > scrollable + window.innerHeight) return;
