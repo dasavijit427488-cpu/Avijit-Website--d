@@ -46,12 +46,12 @@ export function useLenis() {
       return () => clearTimeout(mobileRefresh);
     }
 
+    // smoothWheel: false → native OS momentum scroll runs on compositor thread (zero JS lag)
+    // Lenis is kept only for programmatic scrollTo() on nav clicks — does NOT intercept wheel events
     const lenis = new Lenis({
-      autoRaf: true,
-      smoothWheel: true,
+      autoRaf: false,
+      smoothWheel: false,
       syncTouch: false,
-      duration: 0.8,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       wheelMultiplier: 1.0,
       touchMultiplier: 1.0,
       autoResize: isDesktop,
@@ -66,7 +66,8 @@ export function useLenis() {
     const handleScroll = () => {
       ScrollTrigger.update();
     };
-    lenis.on("scroll", handleScroll);
+    // Drive ScrollTrigger from native scroll events, not Lenis ticker
+    window.addEventListener("scroll", handleScroll, { passive: true });
     gsap.ticker.lagSmoothing(0);
 
     const timer = setTimeout(() => {
@@ -75,7 +76,7 @@ export function useLenis() {
 
     return () => {
       clearTimeout(timer);
-      lenis.off("scroll", handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       lenis.destroy();
       lenisRef.current = null;
       if (window.__lenis === lenis) {

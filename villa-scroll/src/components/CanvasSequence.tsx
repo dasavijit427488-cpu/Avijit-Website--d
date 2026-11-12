@@ -409,9 +409,15 @@ export default function CanvasSequence({
       for (let i = 1; i <= total; i += 1) push(i);
 
       const batchSize = isMob ? 3 : 4;
-      const pauseMs = isMob ? 25 : 15;
+      // Throttle preloading: yield to scroll events so the main thread stays free for 60fps canvas drawing
+      const pauseMs = isMob ? 40 : 20;
 
       for (let i = 0; i < queue.length; i += batchSize) {
+        if (isCancelled) return;
+        // Pause while user is scrolling — do NOT compete with canvas rendering
+        while (!isCancelled && (isScrollingRef.current || Date.now() - lastScrollTimeRef.current < 600)) {
+          await new Promise((r) => setTimeout(r, 50));
+        }
         if (isCancelled) return;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
         await new Promise((r) => setTimeout(r, pauseMs));
@@ -477,9 +483,10 @@ export default function CanvasSequence({
       isScrollingRef.current = true;
       lastScrollTimeRef.current = Date.now();
       if (idleTimer) clearTimeout(idleTimer);
+      // 300ms after last scroll event fires = user has fully stopped scrolling + OS momentum ended
       idleTimer = setTimeout(() => {
         isScrollingRef.current = false;
-      }, 120);
+      }, 300);
 
       if (!pendingRafId) {
         pendingRafId = requestAnimationFrame(renderLatestScroll);
