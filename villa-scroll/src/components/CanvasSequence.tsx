@@ -279,24 +279,6 @@ export default function CanvasSequence({
         return;
       }
 
-      // On mobile touch-flick, throttle priority network fetches to keyframes cleanly to stay at 60fps
-      const shouldFetchExact =
-        !isMobileRef.current ||
-        !isScrollingRef.current ||
-        targetFrame % 2 === 1 ||
-        performance.now() - lastMobilePriorityAtRef.current > 90;
-
-      if (shouldFetchExact) {
-        if (isMobileRef.current) {
-          lastMobilePriorityAtRef.current = performance.now();
-        }
-        loadImage(targetFrame, true).then((loaded) => {
-          if (loaded && Math.abs(currentTargetFrameRef.current - targetFrame) <= 3) {
-            drawFrameImage(loaded, targetFrame);
-          }
-        });
-      }
-
       // Outward nearest-keyframe search across active window guarantees instant zero-freeze visual response
       const total = activeTotalRef.current;
       const searchRadius = Math.min(total, isMobileRef.current ? 32 : total);
@@ -308,7 +290,6 @@ export default function CanvasSequence({
           imagesRef.current[back] &&
           isLoadedMapRef.current[back]
         ) {
-          // If this exact frame is already displayed on canvas, skip redundant redraw to save GPU cycles
           if (back !== lastDrawnFrameRef.current) {
             drawFrameImage(imagesRef.current[back]!, back);
           }
@@ -328,7 +309,7 @@ export default function CanvasSequence({
         }
       }
     },
-    [drawFrameImage, loadImage, preloadAhead]
+    [drawFrameImage, preloadAhead]
   );
 
   // Ignore minor mobile URL address bar height changes (<140px) so scrolling never triggers canvas reallocations
@@ -409,35 +390,29 @@ export default function CanvasSequence({
       // 1. Initial entrance frames (immediate arrival)
       const openSlice = isMob ? 16 : 24;
       for (let i = 1; i <= openSlice; i++) push(i);
-      // Guarantee exit frames at the very end of the sequence are preloaded upfront so end never freezes
+
+      // 2. Guaranteed exit frames at the very end of hero scroll sequence so end never freezes
       push(total);
       push(total - 1);
       push(total - 2);
-      // 2. Uniform keyframe skeleton across whole villa (every 3rd frame)
+      push(total - 3);
+      push(total - 4);
+      push(total - 5);
+
+      // 3. Keyframe grid across whole villa (every 3rd frame)
       for (let i = 1; i <= total; i += 3) push(i);
-      // 3. Half-rate keyframes
+
+      // 4. Half-rate keyframes
       for (let i = 2; i <= total; i += 3) push(i);
-      // 4. Full 60fps locked sequence
+
+      // 5. Full 60fps locked sequence
       for (let i = 1; i <= total; i += 1) push(i);
 
-      const batchSize = isMob ? 2 : 3;
-      const pauseMs = isMob ? 45 : 30;
+      const batchSize = isMob ? 3 : 4;
+      const pauseMs = isMob ? 25 : 15;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        // While user is actively scrolling, yield completely so scroll has 100% bandwidth and 60fps
-        while (!isCancelled && isScrollingRef.current && i >= openSlice) {
-          await new Promise((r) => setTimeout(r, 120));
-        }
-        if (isCancelled) return;
-
-        // Gentle pause after stopping scroll before resuming background preloading (prevents freeze on scroll release)
-        const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
-        if (timeSinceScroll < 400 && i >= openSlice) {
-          await new Promise((r) => setTimeout(r, 400 - timeSinceScroll));
-        }
-        if (isCancelled) return;
-
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
         await new Promise((r) => setTimeout(r, pauseMs));
       }

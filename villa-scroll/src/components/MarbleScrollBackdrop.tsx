@@ -96,15 +96,15 @@ export default function MarbleScrollBackdrop({
         flare2Ref.current.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
       }
 
-      const maxAnimObjects = isMobViewport ? 3 : FAST_3D_SCULPTURES.length;
+      const maxAnimObjects = isMobViewport ? 0 : FAST_3D_SCULPTURES.length;
       for (let i = 0; i < maxAnimObjects; i++) {
         const node = objRefs.current[i];
         const cfg = FAST_3D_SCULPTURES[i];
         if (!node || !cfg) continue;
 
-        const floatX = Math.sin(elapsedSec * cfg.floatSpeed * objectsSpeedMult + cfg.id * 1.3) * (isMobViewport ? 14 : 22);
+        const floatX = Math.sin(elapsedSec * cfg.floatSpeed * objectsSpeedMult + cfg.id * 1.3) * 22;
         const floatY =
-          Math.cos(elapsedSec * cfg.floatSpeed * 0.9 * objectsSpeedMult + cfg.id) * (isMobViewport ? 16 : 24) +
+          Math.cos(elapsedSec * cfg.floatSpeed * 0.9 * objectsSpeedMult + cfg.id) * 24 +
           smoothedProgress * cfg.scrollTravel * 0.55;
         const rx = elapsedSec * cfg.rotSpeedX * objectsSpeedMult + smoothedProgress * 460;
         const ry = elapsedSec * cfg.rotSpeedY * objectsSpeedMult + smoothedProgress * 620;
@@ -135,7 +135,7 @@ export default function MarbleScrollBackdrop({
           rafId = 0;
         }
       },
-      { rootMargin: "250px 0px" }
+      { rootMargin: "0px" }
     );
 
     if (parentEl) {
