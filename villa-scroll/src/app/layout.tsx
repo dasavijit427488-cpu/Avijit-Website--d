@@ -49,18 +49,65 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://avijitvilla.vercel.app"),
-  title: "Avijit Villa | Luxury 3D Architectural Experience",
+  title: {
+    default: "Avijit Villa | Luxury 3D Architectural Experience",
+    template: "%s | Avijit Project",
+  },
+  applicationName: "Avijit Project",
   description: "Bespoke architectural residence showcased through interactive 3D scroll canvas",
   verification: {
     google: "4cNcV9J0qgYAa9nLDHNlt8Yhn0du1ZjCu-9uD0u0hAo",
   },
   icons: {
     icon: [
-      { url: "/images/avijit-favicon.png?v=2", type: "image/png" },
-      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "256x256" },
+      { url: "/images/avijit-favicon.png", type: "image/png", sizes: "256x256" },
     ],
-    shortcut: "/images/avijit-favicon.png?v=2",
-    apple: "/apple-icon.png",
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "256x256", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://avijitvilla.vercel.app",
+    siteName: "Avijit Project",
+    title: "Avijit Villa | Luxury 3D Architectural Experience",
+    description: "Bespoke architectural residence showcased through interactive 3D scroll canvas",
+    images: [
+      {
+        url: "/images/white-marble.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Avijit Villa",
+      },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Avijit Project",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Avijit Project",
+  alternateName: ["Avijit Villa", "Avijit Project Villa"],
+  url: "https://avijitvilla.vercel.app",
+  publisher: {
+    "@type": "Organization",
+    name: "Avijit Project",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://avijitvilla.vercel.app/icon.png",
+      width: 256,
+      height: 256,
+    },
   },
 };
 
@@ -74,6 +121,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${fontVars}`}>
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="256x256" href="/icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <link rel="preload" as="image" href="/frames-opt/frame_0001.webp?v=clean7" media="(min-width: 768px)" fetchPriority="high" />
         <link rel="preload" as="image" href="/frames-mobile/frame_0001.webp?v=clean7" media="(max-width: 767px)" fetchPriority="high" />
       </head>

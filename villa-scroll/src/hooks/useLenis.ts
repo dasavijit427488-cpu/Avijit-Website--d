@@ -48,8 +48,12 @@ export function useLenis() {
 
     const lenis = new Lenis({
       autoRaf: false,
-      smoothWheel: false,
+      smoothWheel: true,
       syncTouch: false,
+      duration: 1.1,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      wheelMultiplier: 0.95,
+      touchMultiplier: 1.0,
       autoResize: isDesktop,
       anchors: {
         offset: -20,
