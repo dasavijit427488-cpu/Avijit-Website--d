@@ -47,10 +47,10 @@ export function useLenis() {
     }
 
     const lenis = new Lenis({
-      autoRaf: false,
+      autoRaf: true,
       smoothWheel: true,
       syncTouch: false,
-      duration: 0.7,
+      duration: 0.8,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       wheelMultiplier: 1.0,
       touchMultiplier: 1.0,
@@ -67,12 +67,7 @@ export function useLenis() {
       ScrollTrigger.update();
     };
     lenis.on("scroll", handleScroll);
-
-    const onTick = (time: number) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(500, 33);
+    gsap.ticker.lagSmoothing(0);
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
@@ -80,7 +75,6 @@ export function useLenis() {
 
     return () => {
       clearTimeout(timer);
-      gsap.ticker.remove(onTick);
       lenis.off("scroll", handleScroll);
       lenis.destroy();
       lenisRef.current = null;

@@ -170,25 +170,15 @@ export default function CanvasSequence({
   }, []);
 
   const loadImage = useCallback(
-    (index: number, isPriority: boolean = false): Promise<HTMLImageElement | ImageBitmap | null> => {
+    (index: number, isPriority: boolean = false): Promise<HTMLImageElement | null> => {
       const total = activeTotalRef.current;
       if (index < 1 || index > total) return Promise.resolve(null);
       if (imagesRef.current[index] && isLoadedMapRef.current[index]) {
-        return Promise.resolve(imagesRef.current[index]);
+        return Promise.resolve(imagesRef.current[index] as HTMLImageElement);
       }
       if (isPendingMapRef.current[index]) return Promise.resolve(null);
 
-      // Cancel stale scroll-priority fetches >22 frames away so current scroll position never waits behind old requests
-      if (isPriority) {
-        for (const [pendingIdx, ctrl] of priorityControllersRef.current.entries()) {
-          if (Math.abs(pendingIdx - currentTargetFrameRef.current) > 22) {
-            ctrl.abort();
-            priorityControllersRef.current.delete(pendingIdx);
-          }
-        }
-      }
-
-      const maxBgConcurrent = isMobileRef.current ? 3 : 4;
+      const maxBgConcurrent = isMobileRef.current ? 3 : 5;
       const maxPriorityConcurrent = isMobileRef.current ? 6 : 8;
       if (!isPriority && bgInFlightRef.current >= maxBgConcurrent) {
         return Promise.resolve(null);
@@ -203,42 +193,15 @@ export default function CanvasSequence({
 
       const url = getFramePath(index);
 
-      // Off-main-thread WebP decoding via createImageBitmap eliminates UI/scroll decode lag on both Mobile & Desktop
-      if (typeof createImageBitmap === "function") {
-        const controller = isPriority ? new AbortController() : null;
-        if (controller) priorityControllersRef.current.set(index, controller);
-
-        return fetch(url, {
-          cache: "force-cache",
-          signal: controller ? controller.signal : undefined,
-        })
-          .then((res) => {
-            if (!res.ok) throw new Error("Frame fetch failed");
-            return res.blob();
-          })
-          .then((blob) => createImageBitmap(blob))
-          .then((bitmap) => {
-            if (controller) priorityControllersRef.current.delete(index);
-            counterRef.current = Math.max(0, counterRef.current - 1);
-            isPendingMapRef.current[index] = false;
-            imagesRef.current[index] = bitmap;
-            isLoadedMapRef.current[index] = true;
-            return bitmap;
-          })
-          .catch(() => {
-            if (controller) priorityControllersRef.current.delete(index);
-            counterRef.current = Math.max(0, counterRef.current - 1);
-            isPendingMapRef.current[index] = false;
-            return null;
-          });
-      }
-
-      return new Promise((resolve) => {
+      return new Promise<HTMLImageElement | null>((resolve) => {
         const img = new Image();
         img.decoding = "async";
         img.src = url;
 
+        let settled = false;
         const done = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
           counterRef.current = Math.max(0, counterRef.current - 1);
           isPendingMapRef.current[index] = false;
           if (ok) {
@@ -250,14 +213,22 @@ export default function CanvasSequence({
           }
         };
 
-        img.onload = () => {
-          if (typeof img.decode === "function") {
-            img.decode().then(() => done(true)).catch(() => done(true));
-          } else {
-            done(true);
-          }
-        };
-        img.onerror = () => done(false);
+        if (typeof img.decode === "function") {
+          img
+            .decode()
+            .then(() => done(true))
+            .catch(() => {
+              if (img.complete && img.naturalWidth > 0) {
+                done(true);
+              } else {
+                img.onload = () => done(true);
+                img.onerror = () => done(false);
+              }
+            });
+        } else {
+          img.onload = () => done(true);
+          img.onerror = () => done(false);
+        }
       });
     },
     [getFramePath]
@@ -449,14 +420,26 @@ export default function CanvasSequence({
       // 4. Full 60fps locked sequence
       for (let i = 1; i <= total; i += 1) push(i);
 
-      const batchSize = isMob ? 3 : 4;
-      const pauseMs = isMob ? 16 : 10;
+      const batchSize = isMob ? 2 : 3;
+      const pauseMs = isMob ? 45 : 30;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        const currentPause = isScrollingRef.current ? (isMob ? 45 : 30) : pauseMs;
+        // While user is actively scrolling, yield completely so scroll has 100% bandwidth and 60fps
+        while (!isCancelled && isScrollingRef.current && i >= openSlice) {
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        if (isCancelled) return;
+
+        // Gentle pause after stopping scroll before resuming background preloading (prevents freeze on scroll release)
+        const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
+        if (timeSinceScroll < 400 && i >= openSlice) {
+          await new Promise((r) => setTimeout(r, 400 - timeSinceScroll));
+        }
+        if (isCancelled) return;
+
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
-        await new Promise((r) => setTimeout(r, currentPause));
+        await new Promise((r) => setTimeout(r, pauseMs));
       }
     };
 
