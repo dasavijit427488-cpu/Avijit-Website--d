@@ -163,21 +163,9 @@ export default function CanvasSequence({
     [getCanvasContext]
   );
 
-  // VRAM safeguard: evicts distant ImageBitmaps to keep GPU memory under 80MB on mobile & 180MB on desktop
-  const evictDistantFrames = useCallback((centerFrame: number) => {
-    const total = activeTotalRef.current;
-    const isMob = isMobileRef.current;
-    const keepRadius = isMob ? 14 : 20;
-    for (let i = 1; i <= total; i++) {
-      if (Math.abs(i - centerFrame) > keepRadius && imagesRef.current[i]) {
-        const item = imagesRef.current[i];
-        if (item && "close" in item && typeof item.close === "function") {
-          item.close();
-        }
-        imagesRef.current[i] = null;
-        isLoadedMapRef.current[i] = false;
-      }
-    }
+  // High-performance image memory management: keeps loaded frames cached for zero-latency instant scrubs
+  const evictDistantFrames = useCallback((_centerFrame: number) => {
+    // Retain loaded frames in memory to avoid constant image re-decoding, network thrashing, and deceleration stutter
   }, []);
 
   const loadImage = useCallback(
@@ -451,15 +439,18 @@ export default function CanvasSequence({
         }
       };
 
-      // Preload initial frames upfront so arrival & entrance section scrub immediately with zero freeze
+      // 1. Initial entrance frames (immediate arrival)
       const openSlice = isMob ? 16 : 20;
       for (let i = 1; i <= openSlice; i++) push(i);
-      // Preload lightweight keyframe skeleton across the entire sequence
+      // 2. Uniform keyframe skeleton across whole villa (every 4th)
       for (let i = 1; i <= total; i += 4) push(i);
-      for (let i = 3; i <= total; i += 4) push(i);
+      // 3. Half-rate keyframes (every 2nd)
+      for (let i = 2; i <= total; i += 4) push(i);
+      // 4. Full 60fps locked sequence
+      for (let i = 1; i <= total; i += 1) push(i);
 
-      const batchSize = isMob ? 2 : 4;
-      const pauseMs = isMob ? 25 : 15;
+      const batchSize = isMob ? 3 : 4;
+      const pauseMs = isMob ? 16 : 10;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
@@ -490,7 +481,7 @@ export default function CanvasSequence({
     };
   }, [totalFrames, initialPreloadCount, framePrefix, loadImage, drawFrameImage]);
 
-  // Direct Passive Scroll + Touch Guard (ignores mobile URL bar bounce resize)
+  // Direct Passive Scroll with Continuous Frame Lerp (glides naturally upon release with zero stutter)
   useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize, { passive: true });
@@ -498,14 +489,15 @@ export default function CanvasSequence({
     let containerTop = 0;
     let scrollable = 1;
     let lastMeasuredW = 0;
-    let rafPending = false;
+    let targetFrame = 1;
+    let smoothedFrame = 1;
+    let animRafId = 0;
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const measure = () => {
       const el = containerRef.current;
       if (!el) return;
       const curW = window.innerWidth;
-      // Only re-measure scrollable span when orientation/width changes (ignores 60px mobile URL bar jitter)
       if (!lastMeasuredW || Math.abs(curW - lastMeasuredW) > 2) {
         lastMeasuredW = curW;
         containerTop = el.offsetTop;
@@ -513,43 +505,56 @@ export default function CanvasSequence({
       }
     };
 
-    const syncFrameFromScroll = () => {
-      rafPending = false;
+    const updateFrameLoop = () => {
+      const isMob = isMobileRef.current;
+      const damping = isMob ? 0.38 : 0.28;
+      const diff = targetFrame - smoothedFrame;
+
+      if (Math.abs(diff) < 0.04) {
+        smoothedFrame = targetFrame;
+        renderFrame(targetFrame);
+        animRafId = 0;
+        return;
+      }
+
+      smoothedFrame += diff * damping;
+      renderFrame(Math.round(smoothedFrame));
+      animRafId = requestAnimationFrame(updateFrameLoop);
+    };
+
+    const onScroll = () => {
+      isScrollingRef.current = true;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 160);
+
       const y = (window.scrollY || window.pageYOffset) - containerTop;
       if (y < -window.innerHeight || y > scrollable + window.innerHeight) return;
 
       const total = activeTotalRef.current;
       const progress = Math.max(0, Math.min(1, y / scrollable));
-      const target = Math.min(
+      targetFrame = Math.min(
         total,
         Math.max(1, Math.round(progress * (total - 1)) + 1)
       );
-      renderFrame(target);
-    };
 
-    const markScrolling = () => {
-      isScrollingRef.current = true;
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 180);
-
-      if (!rafPending) {
-        rafPending = true;
-        requestAnimationFrame(syncFrameFromScroll);
+      if (!animRafId) {
+        animRafId = requestAnimationFrame(updateFrameLoop);
       }
     };
 
     measure();
     window.addEventListener("resize", measure, { passive: true });
-    window.addEventListener("scroll", markScrolling, { passive: true });
-    syncFrameFromScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
 
     return () => {
       if (idleTimer) clearTimeout(idleTimer);
+      if (animRafId) cancelAnimationFrame(animRafId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", markScrolling);
+      window.removeEventListener("scroll", onScroll);
     };
   }, [handleResize, renderFrame]);
 
