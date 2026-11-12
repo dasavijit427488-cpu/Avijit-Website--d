@@ -77,7 +77,7 @@ export default function CanvasSequence({
     const ctx = canvas.getContext("2d", { alpha: false });
     if (ctx) {
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = isMobileRef.current ? "low" : "medium";
+      ctx.imageSmoothingQuality = "high";
       ctxRef.current = ctx;
     }
     return ctx;
@@ -111,7 +111,7 @@ export default function CanvasSequence({
       let offsetY = 0;
 
       if (isMobileRef.current) {
-        // Source-cropped blit on mobile: zero off-screen pixel overdraw
+        // Source-cropped blit on mobile: integer math prevents fuzzy bilinear subpixel sampling
         if (canvasRatio > imgRatio) {
           sh = nw / canvasRatio;
           sy = (nh - sh) / 2;
@@ -119,7 +119,17 @@ export default function CanvasSequence({
           sw = nh * canvasRatio;
           sx = (nw - sw) / 2;
         }
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(
+          img,
+          Math.round(sx),
+          Math.round(sy),
+          Math.round(sw),
+          Math.round(sh),
+          0,
+          0,
+          canvasWidth,
+          canvasHeight
+        );
       } else {
         if (canvasRatio > imgRatio) {
           drawWidth = canvasWidth;
@@ -131,7 +141,17 @@ export default function CanvasSequence({
           offsetX = (canvasWidth - drawWidth) / 2;
         }
 
-        ctx.drawImage(img, 0, 0, nw, nh, offsetX, offsetY, drawWidth, drawHeight);
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          nw,
+          nh,
+          Math.round(offsetX),
+          Math.round(offsetY),
+          Math.round(drawWidth),
+          Math.round(drawHeight)
+        );
       }
 
       lastDrawnFrameRef.current = frameIndex;
@@ -261,9 +281,14 @@ export default function CanvasSequence({
       if (Math.abs(centerFrame - lastPreloadedCenterRef.current) < 1) return;
       lastPreloadedCenterRef.current = centerFrame;
 
+      // On mobile touch swipe, pause speculative background preloading so CPU and network stay 100% responsive to finger drag
+      if (isMobileRef.current && isScrollingRef.current) {
+        return;
+      }
+
       const total = activeTotalRef.current;
       const sign = dir >= 0 ? 1 : -1;
-      const lookAhead = isMobileRef.current ? 8 : 12;
+      const lookAhead = isMobileRef.current ? 4 : 12;
 
       for (let i = 1; i <= lookAhead; i++) {
         const idx = centerFrame + i * sign;
@@ -315,9 +340,10 @@ export default function CanvasSequence({
         });
       }
 
-      // Outward nearest-keyframe search across full sequence guarantees instant zero-freeze visual response
+      // Outward nearest-keyframe search across active window guarantees instant zero-freeze visual response
       const total = activeTotalRef.current;
-      for (let step = 1; step < total; step++) {
+      const searchRadius = Math.min(total, isMobileRef.current ? 32 : total);
+      for (let step = 1; step < searchRadius; step++) {
         const back = targetFrame - step * dir;
         if (
           back >= 1 &&
@@ -325,7 +351,10 @@ export default function CanvasSequence({
           imagesRef.current[back] &&
           isLoadedMapRef.current[back]
         ) {
-          drawFrameImage(imagesRef.current[back]!, back);
+          // If this exact frame is already displayed on canvas, skip redundant redraw to save GPU cycles
+          if (back !== lastDrawnFrameRef.current) {
+            drawFrameImage(imagesRef.current[back]!, back);
+          }
           return;
         }
         const ahead = targetFrame + step * dir;
@@ -335,7 +364,9 @@ export default function CanvasSequence({
           imagesRef.current[ahead] &&
           isLoadedMapRef.current[ahead]
         ) {
-          drawFrameImage(imagesRef.current[ahead]!, ahead);
+          if (ahead !== lastDrawnFrameRef.current) {
+            drawFrameImage(imagesRef.current[ahead]!, ahead);
+          }
           return;
         }
       }
@@ -355,14 +386,16 @@ export default function CanvasSequence({
     const isPortraitPhone = rawW < 768 && rawH >= rawW;
     const isMob = isMobileRef.current;
 
-    // Portrait mobile keeps GPU fill-rate ultra-light (~460x940) for locked 60fps; desktop keeps 1920x1080
-    const dpr = isPortraitPhone
-      ? Math.min(window.devicePixelRatio || 1, 1.15)
-      : rawW < 768
-        ? 1.1
-        : Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.min(Math.round(rawW * dpr), isPortraitPhone ? 460 : 1920);
-    const height = Math.min(Math.round(rawH * dpr), isPortraitPhone ? 940 : 1080);
+    // Crisp high-resolution rendering:
+    // Mobile gets full device pixel density (up to 1080p native width) eliminating all blur
+    // Desktop gets full 1080p+ native clarity matching the source 1920x1080 WebP frames
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = isPortraitPhone
+      ? Math.min(Math.round(rawW * Math.min(window.devicePixelRatio || 2, 2)), 1080)
+      : Math.min(Math.round(rawW * dpr), 1920);
+    const height = isPortraitPhone
+      ? Math.min(Math.round(rawH * Math.min(window.devicePixelRatio || 2, 2)), 1920)
+      : Math.min(Math.round(rawH * dpr), 1080);
 
     const prev = lastAllocatedSizeRef.current;
     const widthChanged = Math.abs(width - prev.w) > 2;
@@ -374,7 +407,7 @@ export default function CanvasSequence({
       canvas.height = height;
       if (ctxRef.current) {
         ctxRef.current.imageSmoothingEnabled = true;
-        ctxRef.current.imageSmoothingQuality = isMob ? "low" : "medium";
+        ctxRef.current.imageSmoothingQuality = "high";
       }
 
       const currentFrame = lastDrawnFrameRef.current > 0 ? lastDrawnFrameRef.current : 1;
@@ -416,12 +449,13 @@ export default function CanvasSequence({
         }
       };
 
-      const openSlice = isMob ? 10 : 14;
+      // Preload the first 24 frames upfront so arrival & entrance section scrub immediately with zero freeze
+      const openSlice = isMob ? 24 : 24;
       for (let i = 1; i <= openSlice; i++) push(i);
       const keyStep = Math.max(1, Math.floor(total / (isMob ? 32 : 24)));
       for (let i = 1; i <= total; i += keyStep) push(i);
       if (isMob) {
-        // Mobile loads 80 odd keyframes first so all Hero frames scrub smoothly before filling evens
+        // Mobile loads keyframes first so all rooms scrub smoothly before filling evens
         for (let i = 1; i <= total; i += 2) push(i);
         for (let i = 2; i <= total; i += 2) push(i);
       } else {
@@ -431,12 +465,12 @@ export default function CanvasSequence({
       }
 
       const batchSize = isMob ? 2 : 4;
-      const pauseMs = isMob ? 24 : 16;
+      const pauseMs = isMob ? 30 : 16;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        while (isScrollingRef.current && !isCancelled && i >= openSlice + 18) {
-          await new Promise((r) => setTimeout(r, 90));
+        while (isScrollingRef.current && !isCancelled && i >= openSlice) {
+          await new Promise((r) => setTimeout(r, 120));
         }
         if (isCancelled) return;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));

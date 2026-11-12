@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image";
 
 interface StudioObject3D {
   id: number;
@@ -25,6 +26,7 @@ const STUDIO_3D_OBJECTS: StudioObject3D[] = [
 
 export default function AdminBackdrop3D() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const marbleRef = useRef<HTMLDivElement | null>(null);
   const objRefs = useRef<(HTMLDivElement | null)[]>([]);
   const orbTopRef = useRef<HTMLDivElement | null>(null);
   const orbBottomRef = useRef<HTMLDivElement | null>(null);
@@ -46,6 +48,14 @@ export default function AdminBackdrop3D() {
     const tick = (now: number) => {
       const t = (now - start) * 0.001;
       scrollSmooth += (scrollTarget - scrollSmooth) * 0.1;
+
+      // Gentle floating drift of bright Calacatta marble backdrop
+      if (marbleRef.current) {
+        const mx = Math.sin(t * 0.22) * 20;
+        const my = Math.cos(t * 0.2) * 16 - scrollSmooth * 40;
+        const scale = 1.06 + Math.sin(t * 0.16) * 0.02;
+        marbleRef.current.style.transform = `translate3d(${mx.toFixed(1)}px, ${my.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+      }
 
       if (orbTopRef.current) {
         const x = Math.sin(t * 0.4) * 32 + scrollSmooth * 45;
@@ -90,21 +100,32 @@ export default function AdminBackdrop3D() {
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
-      {/* Pearl Travertine & Sunlit Ivory Silk Studio Base */}
+      {/* 1. Bright Italian Calacatta White Marble Animated Texture */}
       <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(1200px 700px at 15% 10%, #fffdf8 0%, #f6efe0 48%, #efe3cb 100%)",
-        }}
-      />
+        ref={marbleRef}
+        className="absolute -inset-10 will-change-transform"
+        style={{ transform: "translate3d(0, 0, 0) scale(1.06)" }}
+      >
+        <Image
+          src="/images/white-marble.jpg"
+          alt="Bright White Luxury Calacatta Marble"
+          fill
+          sizes="100vw"
+          quality={95}
+          priority
+          className="object-cover opacity-85 brightness-105 contrast-[1.02]"
+        />
+      </div>
+
+      {/* 2. Soft Sunlit Ivory Translucent Veil */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#fffdfa]/60 via-[#faf5eb]/50 to-[#f6ede0]/65 backdrop-blur-[1px]" />
 
       {/* Subtle Architectural Blueprint Coordinate Grid */}
       <div
-        className="absolute inset-0 opacity-35"
+        className="absolute inset-0 opacity-25"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(181,139,40,0.14) 1px, transparent 1px), linear-gradient(to bottom, rgba(181,139,40,0.14) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(181,139,40,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(181,139,40,0.12) 1px, transparent 1px)",
           backgroundSize: "52px 52px",
         }}
       />

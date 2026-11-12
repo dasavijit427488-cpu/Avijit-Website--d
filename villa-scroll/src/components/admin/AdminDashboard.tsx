@@ -23,10 +23,8 @@ export default function AdminDashboard() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
-  // Enforce fresh login on every visit AND invalidate session whenever leaving /admin
+  // Enforce fresh login on initial visit AND invalidate session whenever leaving /admin
   useEffect(() => {
-    void fetch("/api/auth/logout", { method: "POST", cache: "no-store" }).catch(() => {});
-
     const terminateAdminSession = () => {
       try {
         if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
@@ -54,7 +52,7 @@ export default function AdminDashboard() {
     return () => {
       window.removeEventListener("pagehide", terminateAdminSession);
       window.removeEventListener("pageshow", handlePageShow);
-      terminateAdminSession();
+      // NOTE: Do not terminate session inside React effect cleanup so component re-renders preserve active admin login
     };
   }, []);
 

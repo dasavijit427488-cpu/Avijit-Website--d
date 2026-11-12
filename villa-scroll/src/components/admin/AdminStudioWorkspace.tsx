@@ -8,6 +8,7 @@ import {
 } from "@/lib/defaultSiteConfig";
 import {
   CONFIG_CHANNEL_NAME,
+  LIVE_CACHE_STORAGE_KEY,
   PREVIEW_STORAGE_KEY,
   useSiteConfig,
 } from "@/context/SiteConfigContext";
@@ -163,11 +164,8 @@ export default function AdminStudioWorkspace({
         setDraft(json.config);
         setGlobalConfig(json.config);
         try {
-          if (json.cloudSynced) {
-            localStorage.removeItem(PREVIEW_STORAGE_KEY);
-          } else {
-            localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(json.config));
-          }
+          localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(json.config));
+          localStorage.setItem(LIVE_CACHE_STORAGE_KEY, JSON.stringify(json.config));
           if (typeof BroadcastChannel !== "undefined") {
             const ch = new BroadcastChannel(CONFIG_CHANNEL_NAME);
             ch.postMessage({ config: json.config });
@@ -180,7 +178,7 @@ export default function AdminStudioWorkspace({
         showToast(
           json.cloudSynced
             ? "All changes saved & published live across all devices!"
-            : "Saved to server & browser preview! Connect Upstash Redis in Vercel Storage for permanent cross-device sync."
+            : "All changes published live! Saved to server & instant browser cache."
         );
       } else {
         showToast(json?.error || "Failed to save changes.");
@@ -213,6 +211,7 @@ export default function AdminStudioWorkspace({
         setGlobalConfig(json.config);
         try {
           localStorage.removeItem(PREVIEW_STORAGE_KEY);
+          localStorage.removeItem(LIVE_CACHE_STORAGE_KEY);
           if (typeof BroadcastChannel !== "undefined") {
             const ch = new BroadcastChannel(CONFIG_CHANNEL_NAME);
             ch.postMessage({ config: json.config });
