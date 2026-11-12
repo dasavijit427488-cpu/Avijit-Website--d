@@ -25,6 +25,9 @@ export default function AdminDashboard() {
 
   // Enforce fresh login on initial visit AND invalidate session whenever leaving /admin
   useEffect(() => {
+    // Preload admin workspace chunk immediately in background so login transition is instant
+    void import("./AdminStudioWorkspace");
+
     const terminateAdminSession = () => {
       try {
         if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {

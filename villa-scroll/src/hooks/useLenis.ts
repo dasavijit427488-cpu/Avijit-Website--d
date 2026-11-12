@@ -50,9 +50,9 @@ export function useLenis() {
       autoRaf: false,
       smoothWheel: true,
       syncTouch: false,
-      duration: 1.1,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      wheelMultiplier: 0.95,
+      duration: 0.9,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -8 * t)),
+      wheelMultiplier: 1.0,
       touchMultiplier: 1.0,
       autoResize: isDesktop,
       anchors: {
@@ -72,7 +72,7 @@ export function useLenis() {
       lenis.raf(time * 1000);
     };
     gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();

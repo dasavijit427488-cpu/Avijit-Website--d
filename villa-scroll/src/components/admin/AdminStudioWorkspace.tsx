@@ -105,39 +105,45 @@ export default function AdminStudioWorkspace({
   };
 
   const loadWorkspaceData = useCallback(async () => {
-    const [cfgRes, inqRes, medRes, acctRes, statusRes] = await Promise.all([
-      fetch("/api/site-config", { cache: "no-store" }),
-      fetch("/api/inquiries", { cache: "no-store" }),
-      fetch("/api/upload", { cache: "no-store" }),
-      fetch("/api/auth/account", { cache: "no-store" }),
-      fetch("/api/auth/status", { cache: "no-store" }),
-    ]);
+    fetch("/api/site-config", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((cJson) => {
+        if (cJson?.ok && cJson?.config) setDraft(cJson.config);
+      })
+      .catch(() => {});
 
-    if (cfgRes.ok) {
-      const cJson = await cfgRes.json();
-      if (cJson?.ok && cJson?.config) setDraft(cJson.config);
-    }
-    if (inqRes.ok) {
-      const iJson = await inqRes.json();
-      if (iJson?.ok) setInquiries(iJson.inquiries || []);
-    }
-    if (medRes.ok) {
-      const mJson = await medRes.json();
-      if (mJson?.ok) setMediaAssets(mJson.assets || []);
-    }
-    if (acctRes.ok) {
-      const aJson = await acctRes.json();
-      if (aJson?.ok) {
-        setUsers(aJson.users || []);
-        if (aJson.smtp) setSmtpInfo(aJson.smtp);
-        if (aJson.deployment) setDeploymentInfo(aJson.deployment);
-        if (aJson.user) onUserUpdated(aJson.user);
-      }
-    }
-    if (statusRes.ok) {
-      const sJson = await statusRes.json();
-      if (sJson?.dbStats) setDbStats(sJson.dbStats);
-    }
+    fetch("/api/inquiries", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((iJson) => {
+        if (iJson?.ok) setInquiries(iJson.inquiries || []);
+      })
+      .catch(() => {});
+
+    fetch("/api/upload", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((mJson) => {
+        if (mJson?.ok) setMediaAssets(mJson.assets || []);
+      })
+      .catch(() => {});
+
+    fetch("/api/auth/account", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((aJson) => {
+        if (aJson?.ok) {
+          setUsers(aJson.users || []);
+          if (aJson.smtp) setSmtpInfo(aJson.smtp);
+          if (aJson.deployment) setDeploymentInfo(aJson.deployment);
+          if (aJson.user) onUserUpdated(aJson.user);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/auth/status", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((sJson) => {
+        if (sJson?.dbStats) setDbStats(sJson.dbStats);
+      })
+      .catch(() => {});
   }, [onUserUpdated]);
 
   useEffect(() => {

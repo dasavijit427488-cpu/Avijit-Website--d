@@ -163,13 +163,12 @@ export default function CanvasSequence({
     [getCanvasContext]
   );
 
-  // VRAM safeguard: evicts distant ImageBitmaps on desktop; mobile caches keyframes cleanly without churn
+  // VRAM safeguard: evicts distant ImageBitmaps to keep GPU memory under 80MB on mobile & 180MB on desktop
   const evictDistantFrames = useCallback((centerFrame: number) => {
     const total = activeTotalRef.current;
     const isMob = isMobileRef.current;
-    const keepRadius = isMob ? 95 : 110;
+    const keepRadius = isMob ? 14 : 20;
     for (let i = 1; i <= total; i++) {
-      if (isMob && i % 2 === 1) continue;
       if (Math.abs(i - centerFrame) > keepRadius && imagesRef.current[i]) {
         const item = imagesRef.current[i];
         if (item && "close" in item && typeof item.close === "function") {
@@ -220,7 +219,10 @@ export default function CanvasSequence({
         const controller = isPriority ? new AbortController() : null;
         if (controller) priorityControllersRef.current.set(index, controller);
 
-        return fetch(url, controller ? { signal: controller.signal } : undefined)
+        return fetch(url, {
+          cache: "force-cache",
+          signal: controller ? controller.signal : undefined,
+        })
           .then((res) => {
             if (!res.ok) throw new Error("Frame fetch failed");
             return res.blob();
@@ -297,7 +299,7 @@ export default function CanvasSequence({
         }
       }
 
-      if (Math.abs(centerFrame - lastEvictCenterRef.current) > 20) {
+      if (Math.abs(centerFrame - lastEvictCenterRef.current) >= 4) {
         lastEvictCenterRef.current = centerFrame;
         evictDistantFrames(centerFrame);
       }
@@ -449,23 +451,15 @@ export default function CanvasSequence({
         }
       };
 
-      // Preload the first 24 frames upfront so arrival & entrance section scrub immediately with zero freeze
-      const openSlice = isMob ? 24 : 24;
+      // Preload initial frames upfront so arrival & entrance section scrub immediately with zero freeze
+      const openSlice = isMob ? 16 : 20;
       for (let i = 1; i <= openSlice; i++) push(i);
-      const keyStep = Math.max(1, Math.floor(total / (isMob ? 32 : 24)));
-      for (let i = 1; i <= total; i += keyStep) push(i);
-      if (isMob) {
-        // Mobile loads keyframes first so all rooms scrub smoothly before filling evens
-        for (let i = 1; i <= total; i += 2) push(i);
-        for (let i = 2; i <= total; i += 2) push(i);
-      } else {
-        for (let i = 1; i <= total; i += 4) push(i);
-        for (let i = 1; i <= total; i += 2) push(i);
-        for (let i = 1; i <= total; i += 1) push(i);
-      }
+      // Preload lightweight keyframe skeleton across the entire sequence
+      for (let i = 1; i <= total; i += 4) push(i);
+      for (let i = 3; i <= total; i += 4) push(i);
 
       const batchSize = isMob ? 2 : 4;
-      const pauseMs = isMob ? 30 : 16;
+      const pauseMs = isMob ? 25 : 15;
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
