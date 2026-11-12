@@ -339,20 +339,18 @@ export default function AdminStudioWorkspace({
                     setActiveTab(t.id);
                     setMobileNavOpen(false);
                   }}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                    isActive
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isActive
                       ? "bg-[#d4af37] text-[#2b2000] border-[#f2ca50] font-bold"
                       : "bg-white/10 text-[#f5efe6] border-white/15 hover:bg-white/15"
-                  }`}
+                    }`}
                 >
                   <div className="min-w-0">
                     <div className="text-xs font-bold truncate">
                       {String(idx + 1).padStart(2, "0")}. {t.label}
                     </div>
                     <div
-                      className={`text-[10px] truncate ${
-                        isActive ? "text-[#3b2c00]" : "text-[#cfc8bd]"
-                      }`}
+                      className={`text-[10px] truncate ${isActive ? "text-[#3b2c00]" : "text-[#cfc8bd]"
+                        }`}
                     >
                       {t.hint}
                     </div>
@@ -387,29 +385,26 @@ export default function AdminStudioWorkspace({
                 key={t.id}
                 type="button"
                 onClick={() => setActiveTab(t.id)}
-                className={`w-full text-left px-4 py-3 rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-between gap-2.5 border backdrop-blur-xl ${
-                  isActive
+                className={`w-full text-left px-4 py-3 rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-between gap-2.5 border backdrop-blur-xl ${isActive
                     ? "bg-[#15120d] text-[#f2ca50] border-[#d4af37] shadow-[0_12px_28px_rgba(21,18,13,0.22)] translate-x-1"
                     : "bg-white/88 text-[#4a4236] border-[#c9a84c]/45 hover:border-[#8b6914] hover:bg-white hover:text-[#1c1812]"
-                }`}
+                  }`}
               >
                 <div className="min-w-0">
                   <div className="text-xs font-bold tracking-wide flex items-center gap-2">
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        isActive
+                      className={`text-[10px] px-1.5 py-0.5 rounded ${isActive
                           ? "bg-[#d4af37] text-[#2b2000]"
                           : "bg-[#faf6ed] text-[#8b6914] border border-[#e5d5aa]"
-                      }`}
+                        }`}
                     >
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                     <span className="truncate">{t.label}</span>
                   </div>
                   <div
-                    className={`text-[10px] mt-1 truncate ${
-                      isActive ? "text-[#e5d5aa]" : "text-[#6e6454]"
-                    }`}
+                    className={`text-[10px] mt-1 truncate ${isActive ? "text-[#e5d5aa]" : "text-[#6e6454]"
+                      }`}
                   >
                     {t.hint}
                   </div>
