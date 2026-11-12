@@ -50,7 +50,7 @@ export function useLenis() {
       autoRaf: false,
       smoothWheel: true,
       syncTouch: false,
-      duration: 1.0,
+      duration: 0.7,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       wheelMultiplier: 1.0,
       touchMultiplier: 1.0,

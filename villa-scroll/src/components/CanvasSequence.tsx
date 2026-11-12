@@ -272,14 +272,9 @@ export default function CanvasSequence({
       if (Math.abs(centerFrame - lastPreloadedCenterRef.current) < 1) return;
       lastPreloadedCenterRef.current = centerFrame;
 
-      // On mobile touch swipe, pause speculative background preloading so CPU and network stay 100% responsive to finger drag
-      if (isMobileRef.current && isScrollingRef.current) {
-        return;
-      }
-
       const total = activeTotalRef.current;
       const sign = dir >= 0 ? 1 : -1;
-      const lookAhead = isMobileRef.current ? 4 : 12;
+      const lookAhead = isMobileRef.current ? 6 : 14;
 
       for (let i = 1; i <= lookAhead; i++) {
         const idx = centerFrame + i * sign;
@@ -441,16 +436,16 @@ export default function CanvasSequence({
       };
 
       // 1. Initial entrance frames (immediate arrival)
-      const openSlice = isMob ? 16 : 20;
+      const openSlice = isMob ? 16 : 24;
       for (let i = 1; i <= openSlice; i++) push(i);
       // Guarantee exit frames at the very end of the sequence are preloaded upfront so end never freezes
       push(total);
       push(total - 1);
       push(total - 2);
-      // 2. Uniform keyframe skeleton across whole villa (every 4th)
-      for (let i = 1; i <= total; i += 4) push(i);
-      // 3. Half-rate keyframes (every 2nd)
-      for (let i = 2; i <= total; i += 4) push(i);
+      // 2. Uniform keyframe skeleton across whole villa (every 3rd frame)
+      for (let i = 1; i <= total; i += 3) push(i);
+      // 3. Half-rate keyframes
+      for (let i = 2; i <= total; i += 3) push(i);
       // 4. Full 60fps locked sequence
       for (let i = 1; i <= total; i += 1) push(i);
 
@@ -459,13 +454,9 @@ export default function CanvasSequence({
 
       for (let i = 0; i < queue.length; i += batchSize) {
         if (isCancelled) return;
-        // Never compete with active scrolling or the deceleration settle phase
-        while (!isCancelled && (isScrollingRef.current || Date.now() - lastScrollTimeRef.current < 500) && i >= openSlice) {
-          await new Promise((r) => setTimeout(r, 100));
-        }
-        if (isCancelled) return;
+        const currentPause = isScrollingRef.current ? (isMob ? 45 : 30) : pauseMs;
         await Promise.all(queue.slice(i, i + batchSize).map((idx) => loadImage(idx, false)));
-        await new Promise((r) => setTimeout(r, pauseMs));
+        await new Promise((r) => setTimeout(r, currentPause));
       }
     };
 
@@ -487,7 +478,7 @@ export default function CanvasSequence({
     };
   }, [totalFrames, initialPreloadCount, framePrefix, loadImage, drawFrameImage]);
 
-  // Direct Passive Scroll with Continuous Frame Lerp (glides naturally upon release with zero stutter)
+  // Direct 60/120Hz Hardware RAF Scroll Sync: stops instantly with zero trailing lag, crawl, or stutter when releasing scroll
   useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize, { passive: true });
@@ -495,9 +486,7 @@ export default function CanvasSequence({
     let containerTop = 0;
     let scrollable = 1;
     let lastMeasuredW = 0;
-    let targetFrame = 1;
-    let smoothedFrame = 1;
-    let animRafId = 0;
+    let pendingRafId = 0;
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const measure = () => {
@@ -511,22 +500,19 @@ export default function CanvasSequence({
       }
     };
 
-    const updateFrameLoop = () => {
-      const isMob = isMobileRef.current;
-      const damping = isMob ? 0.44 : 0.36;
-      const diff = targetFrame - smoothedFrame;
+    const renderLatestScroll = () => {
+      pendingRafId = 0;
+      const y = (window.scrollY || window.pageYOffset) - containerTop;
+      if (y < -window.innerHeight || y > scrollable + window.innerHeight) return;
 
-      // When within 0.45 of a frame, settle immediately onto the final integer frame with zero trailing lag or stall
-      if (Math.abs(diff) < 0.45) {
-        smoothedFrame = targetFrame;
-        renderFrame(targetFrame);
-        animRafId = 0;
-        return;
-      }
+      const total = activeTotalRef.current;
+      const progress = Math.max(0, Math.min(1, y / scrollable));
+      const targetFrame = Math.min(
+        total,
+        Math.max(1, Math.round(progress * (total - 1)) + 1)
+      );
 
-      smoothedFrame += diff * damping;
-      renderFrame(Math.round(smoothedFrame));
-      animRafId = requestAnimationFrame(updateFrameLoop);
+      renderFrame(targetFrame);
     };
 
     const onScroll = () => {
@@ -535,20 +521,10 @@ export default function CanvasSequence({
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         isScrollingRef.current = false;
-      }, 180);
+      }, 120);
 
-      const y = (window.scrollY || window.pageYOffset) - containerTop;
-      if (y < -window.innerHeight || y > scrollable + window.innerHeight) return;
-
-      const total = activeTotalRef.current;
-      const progress = Math.max(0, Math.min(1, y / scrollable));
-      targetFrame = Math.min(
-        total,
-        Math.max(1, Math.round(progress * (total - 1)) + 1)
-      );
-
-      if (!animRafId) {
-        animRafId = requestAnimationFrame(updateFrameLoop);
+      if (!pendingRafId) {
+        pendingRafId = requestAnimationFrame(renderLatestScroll);
       }
     };
 
@@ -559,7 +535,7 @@ export default function CanvasSequence({
 
     return () => {
       if (idleTimer) clearTimeout(idleTimer);
-      if (animRafId) cancelAnimationFrame(animRafId);
+      if (pendingRafId) cancelAnimationFrame(pendingRafId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", onScroll);

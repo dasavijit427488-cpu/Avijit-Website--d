@@ -142,7 +142,7 @@ export default function InteriorOverlays({
           trigger: triggerEl,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.6,
+          scrub: 0.1,
         },
       });
 
