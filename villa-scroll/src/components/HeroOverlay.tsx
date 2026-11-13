@@ -30,15 +30,19 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
     const container = document.getElementById("canvas-sequence-container");
     if (!container) return;
 
-    const scrollable = container.offsetHeight - window.innerHeight;
+    // Use scrollHeight (actual content height) not offsetHeight (visible height)
+    const containerH = container.scrollHeight || container.offsetHeight;
+    const scrollable = containerH - window.innerHeight;
     if (scrollable <= 0) return;
 
-    const progress = Math.max(0, Math.min(1, (targetFrame - 1) / (2392 - 1)));
-    const targetY = container.offsetTop + progress * scrollable;
+    const totalFrames = 2392;
+    const progress = Math.max(0, Math.min(1, (targetFrame - 1) / (totalFrames - 1)));
+    const containerTop = container.getBoundingClientRect().top + window.scrollY;
+    const targetY = containerTop + progress * scrollable;
 
     const lenis = getLenis();
     if (lenis) {
-      lenis.scrollTo(targetY, { duration: 1.0 });
+      lenis.scrollTo(targetY, { duration: 1.2, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
     } else {
       window.scrollTo({ top: targetY, behavior: "smooth" });
     }

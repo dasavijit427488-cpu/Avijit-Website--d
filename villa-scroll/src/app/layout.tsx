@@ -50,11 +50,15 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://avijitvilla.vercel.app"),
   title: {
-    default: "Avijit Villa | Luxury 3D Architectural Experience",
+    default: "Avijit Project | Luxury 3D Architectural Experience",
     template: "%s | Avijit Project",
   },
   applicationName: "Avijit Project",
-  description: "Bespoke architectural residence showcased through interactive 3D scroll canvas",
+  description: "Avijit Project — Bespoke luxury architectural residence showcased through interactive 3D scroll canvas. Experience the grandeur of Avijit Villa.",
+  keywords: ["Avijit Project", "Avijit Villa", "luxury villa", "3D architecture", "Howrah villa"],
+  authors: [{ name: "Avijit Project" }],
+  creator: "Avijit Project",
+  publisher: "Avijit Project",
   verification: {
     google: "4cNcV9J0qgYAa9nLDHNlt8Yhn0du1ZjCu-9uD0u0hAo",
   },
@@ -75,16 +79,22 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://avijitvilla.vercel.app",
     siteName: "Avijit Project",
-    title: "Avijit Villa | Luxury 3D Architectural Experience",
-    description: "Bespoke architectural residence showcased through interactive 3D scroll canvas",
+    title: "Avijit Project | Luxury 3D Architectural Experience",
+    description: "Avijit Project — Bespoke luxury architectural residence showcased through interactive 3D scroll canvas.",
     images: [
       {
         url: "/images/white-marble.jpg",
         width: 1200,
         height: 630,
-        alt: "Avijit Villa",
+        alt: "Avijit Project — Luxury Villa",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Avijit Project | Luxury 3D Architectural Experience",
+    description: "Avijit Project — Bespoke luxury architectural residence.",
+    images: ["/images/white-marble.jpg"],
   },
   appleWebApp: {
     capable: true,
@@ -97,17 +107,24 @@ const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "Avijit Project",
-  alternateName: ["Avijit Villa", "Avijit Project Villa"],
+  alternateName: ["Avijit Villa", "Avijit Project Villa", "Avijit Villa Lodge"],
   url: "https://avijitvilla.vercel.app",
+  description: "Avijit Project — Bespoke luxury architectural residence with interactive 3D experience.",
   publisher: {
     "@type": "Organization",
     name: "Avijit Project",
+    url: "https://avijitvilla.vercel.app",
     logo: {
       "@type": "ImageObject",
       url: "https://avijitvilla.vercel.app/icon.png",
       width: 256,
       height: 256,
     },
+  },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://avijitvilla.vercel.app/?q={search_term_string}",
+    "query-input": "required name=search_term_string",
   },
 };
 
