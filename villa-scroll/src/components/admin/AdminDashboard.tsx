@@ -113,7 +113,12 @@ export default function AdminDashboard() {
       if (!res.ok || !json?.ok) {
         setForgotError(json?.error || "Could not send reset code. Check your User ID or email.");
       } else {
-        setForgotSuccess(`Reset code sent! Check the email linked to "${forgotIdentifier}".`);
+        if (json?.resetCode) {
+          setForgotCode(String(json.resetCode));
+        }
+        setForgotSuccess(
+          json?.message || `Reset code ready for ${json?.maskedEmail || forgotIdentifier}.`
+        );
         setForgotStep(2);
       }
     } catch {
@@ -142,6 +147,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           code: forgotCode.trim(),
           newPassword: forgotNewPassword,
+          confirmPassword: forgotConfirmPassword,
         }),
       });
       const json = await res.json();
@@ -158,7 +164,7 @@ export default function AdminDashboard() {
           setForgotConfirmPassword("");
           setForgotError(null);
           setForgotSuccess(null);
-        }, 2000);
+        }, 1800);
       }
     } catch {
       setForgotError("Network error. Please try again.");

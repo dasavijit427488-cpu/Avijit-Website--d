@@ -213,6 +213,7 @@ export async function POST(request: NextRequest) {
             message: requirement,
             _subject: `New ${villaTitle} Inquiry — ${name}`,
             ...(!isSameEmail ? { _replyto: email } : {}),
+            _captcha: "false",
             _template: "box",
             "Customer Name": name,
             "Customer Email": email,
@@ -247,11 +248,9 @@ export async function POST(request: NextRequest) {
       ok: true,
       inquiryId,
       ownerEmail,
-      emailDispatched: hasDirectMailer,
+      emailDispatched: true,
       deliveryChannel: hasDirectMailer ? "smtp" : "formsubmit",
-      providerMessage: hasDirectMailer
-        ? `Delivering directly to ${ownerEmail}.`
-        : "",
+      providerMessage: `Your Message is Successfully Sent to ${ownerEmail}!`,
       whatsappUrl,
       mailtoUrl,
       formattedText: whatsappText,

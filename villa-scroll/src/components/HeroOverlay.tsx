@@ -25,40 +25,26 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
 
   const isBrightHeader = activeSection !== "residence";
 
-  const scrollToFrame = (targetFrame: number) => {
-    setMobileMenuOpen(false);
-    const container = document.getElementById("canvas-sequence-container");
-    if (!container) return;
-
-    // Use scrollHeight (actual content height) not offsetHeight (visible height)
-    const containerH = container.scrollHeight || container.offsetHeight;
-    const scrollable = containerH - window.innerHeight;
-    if (scrollable <= 0) return;
-
-    const totalFrames = 2392;
-    const progress = Math.max(0, Math.min(1, (targetFrame - 1) / (totalFrames - 1)));
-    const containerTop = container.getBoundingClientRect().top + window.scrollY;
-    const targetY = containerTop + progress * scrollable;
-
-    const lenis = getLenis();
-    if (lenis) {
-      lenis.scrollTo(targetY, { duration: 1.2, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
-    } else {
-      window.scrollTo({ top: targetY, behavior: "smooth" });
-    }
-  };
-
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
+    if (typeof window === "undefined") return;
+
+    if (sectionId === "residence") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const targetEl = document.getElementById(sectionId);
     if (!targetEl) return;
 
-    const lenis = getLenis();
-    if (lenis) {
-      lenis.scrollTo(targetEl, { offset: -20, duration: 1.0 });
-    } else {
-      targetEl.scrollIntoView({ behavior: "smooth" });
-    }
+    const navOffset = 70;
+    const elementPosition = targetEl.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + (window.scrollY || window.pageYOffset) - navOffset;
+
+    window.scrollTo({
+      top: Math.max(0, offsetPosition),
+      behavior: "smooth",
+    });
   };
 
   const sectionLabels: Record<ActiveSection, string> = {
@@ -80,8 +66,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
   const orderedNavItems = pageOrder.map((id) => ({
     id,
     label: sectionLabels[id],
-    action: () =>
-      id === "residence" ? scrollToFrame(1) : scrollToSection(id),
+    action: () => scrollToSection(id),
   }));
 
   useEffect(() => {
@@ -256,7 +241,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
       {/* 1. Slightly Translucent Dual-Theme Architectural Header (Clearly Visible Yet See-Through) */}
       <header
         ref={headerRef}
-        className="header-top fixed top-0 left-0 right-0 z-40 px-3 sm:px-8 md:px-12 pt-3 sm:pt-4 transition-colors duration-300 ease-out select-none pointer-events-none"
+        className="header-top fixed top-0 left-0 right-0 z-50 px-3 sm:px-8 md:px-12 pt-3 sm:pt-4 transition-colors duration-300 ease-out select-none pointer-events-none"
       >
         <div
           className={`header-capsule max-w-6xl mx-auto transition-colors duration-300 ease-out px-4 sm:px-6 md:px-10 py-2.5 sm:py-3 flex items-center justify-between pointer-events-auto ${
@@ -268,7 +253,7 @@ export default function HeroOverlay({ onInquireClick }: HeroOverlayProps) {
           {/* Left: Brand Monogram & Bespoke Architectural Crest */}
           <button
             type="button"
-            onClick={() => scrollToFrame(1)}
+            onClick={() => scrollToSection("residence")}
             className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer text-left"
           >
             <div

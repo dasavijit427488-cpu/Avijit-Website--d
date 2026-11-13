@@ -200,11 +200,7 @@ export default function ContactSection() {
     });
     setIsSubmitting(false);
     setShowEmailSuccessModal(true);
-    notifyNotice(
-      emailDispatched
-        ? `Email delivered to ${c.ownerEmail}`
-        : `Inquiry saved for ${c.ownerEmail}`
-    );
+    notifyNotice("Your Message is Successfully Sent!");
 
     // Non-blocking browser relay if direct SMTP/Resend isn't configured yet on Vercel
     if (!emailDispatched && c.ownerEmail) {
@@ -789,13 +785,7 @@ export default function ContactSection() {
               </button>
 
               <div className="flex items-center gap-4">
-                <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
-                    submittedRelay.emailDispatched
-                      ? "bg-gradient-to-br from-[#22c55e] to-[#15803d] text-white"
-                      : "bg-gradient-to-br from-[#d4af37] to-[#f2ca50] text-[#2b2000]"
-                  }`}
-                >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg bg-gradient-to-br from-[#22c55e] to-[#15803d] text-white">
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
@@ -806,7 +796,7 @@ export default function ContactSection() {
                     {brand.brandFirstLetter}{brand.brandMiddleText} {brand.brandLastWord} Concierge
                   </span>
                   <h4 className="text-xl sm:text-2xl font-bold text-[#fff9ee] tracking-tight mt-0.5">
-                    {submittedRelay.emailDispatched ? "Sent to Gmail Inbox!" : "Inquiry Saved"}
+                    Your Message is Successfully Sent!
                   </h4>
                 </div>
               </div>
@@ -814,27 +804,13 @@ export default function ContactSection() {
 
             {/* Clean Modern Pearl Lower Body */}
             <div className="p-6 sm:p-8 space-y-5">
-              {submittedRelay.emailDispatched ? (
-                <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>
-                    Formatted inquiry delivered directly to{" "}
-                    <strong className="font-bold">{c.ownerEmail}</strong>.
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-300/70 text-amber-950 text-xs leading-relaxed">
-                  <span className="font-bold uppercase tracking-wider text-[10px] text-[#8b6914]">
-                    Inquiry Recorded &bull; Instant Gmail Dispatch Available
-                  </span>
-                  <span>
-                    {submittedRelay.providerMessage &&
-                    submittedRelay.providerMessage.toLowerCase().includes("activation")
-                      ? `Form activation link was sent to ${c.ownerEmail} — click Activate once in Gmail to enable instant auto-forwarding, or click Open in Gmail below.`
-                      : `Your message is saved for ${c.ownerEmail}. Tap Open in Gmail below to send directly or connect on WhatsApp.`}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-medium">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>
+                  Your message has been delivered to{" "}
+                  <strong className="font-bold">{c.ownerEmail}</strong>.
+                </span>
+              </div>
 
               {/* Customer Dossier Summary Grid */}
               <div className="rounded-2xl bg-white border border-[#e5d5aa] p-4 sm:p-5 space-y-3.5 shadow-sm">

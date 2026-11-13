@@ -17,56 +17,21 @@ declare global {
 }
 
 export function getLenis(): Lenis | undefined {
-  if (typeof window !== "undefined") {
-    return window.__lenis;
-  }
   return undefined;
 }
 
 /**
  * Native-Wheel Zero-Lag Scroll Integration:
- * - smoothWheel: false eliminates 1-2s artificial Lenis wheel-release lag & buffered scroll queues
- * - Uses native 60/120Hz OS mousewheel & trackpad responsiveness while preserving smooth programmatic anchor jumps
+ * - Native browser scrolling runs on the compositor thread with zero lag
+ * - Programmatic smooth scrolling uses window.scrollTo({ top, behavior: "smooth" })
  */
 export function useLenis() {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
-      return;
-    }
-
-    const isDesktop = typeof window !== "undefined" ? window.innerWidth >= 768 : true;
-
-    // On mobile viewports, native browser touch momentum runs at hardware 60/120fps without Lenis ticker overhead
-    if (!isDesktop) {
-      const mobileRefresh = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 400);
-      return () => clearTimeout(mobileRefresh);
-    }
-
-    // smoothWheel: false → native OS momentum scroll runs on compositor thread (zero JS lag)
-    // Lenis is kept only for programmatic scrollTo() on nav clicks — does NOT intercept wheel events
-    const lenis = new Lenis({
-      autoRaf: false,
-      smoothWheel: false,
-      syncTouch: false,
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.0,
-      autoResize: isDesktop,
-      anchors: {
-        offset: -20,
-      },
-    });
-
-    lenisRef.current = lenis;
-    window.__lenis = lenis;
-
     const handleScroll = () => {
       ScrollTrigger.update();
     };
-    // Drive ScrollTrigger from native scroll events, not Lenis ticker
     window.addEventListener("scroll", handleScroll, { passive: true });
     gsap.ticker.lagSmoothing(0);
 
@@ -77,11 +42,6 @@ export function useLenis() {
     return () => {
       clearTimeout(timer);
       window.removeEventListener("scroll", handleScroll);
-      lenis.destroy();
-      lenisRef.current = null;
-      if (window.__lenis === lenis) {
-        window.__lenis = undefined;
-      }
     };
   }, []);
 
