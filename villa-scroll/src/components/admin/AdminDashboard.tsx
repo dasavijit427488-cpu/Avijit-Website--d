@@ -113,11 +113,10 @@ export default function AdminDashboard() {
       if (!res.ok || !json?.ok) {
         setForgotError(json?.error || "Could not send reset code. Check your User ID or email.");
       } else {
-        if (json?.resetCode) {
-          setForgotCode(String(json.resetCode));
-        }
+        setForgotCode(""); // Must remain empty so user enters it from their Gmail inbox
         setForgotSuccess(
-          json?.message || `Reset code ready for ${json?.maskedEmail || forgotIdentifier}.`
+          json?.message ||
+            `A 6-digit verification code has been sent to ${json?.maskedEmail || forgotIdentifier}. Check your Gmail inbox and enter the code below.`
         );
         setForgotStep(2);
       }
@@ -327,8 +326,11 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     {forgotSuccess && (
-                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold">
-                        {forgotSuccess}
+                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium space-y-1">
+                        <div>{forgotSuccess}</div>
+                        <div className="text-[10px] text-emerald-600">
+                          Tip: Check your Gmail <strong>Inbox</strong> or <strong>Spam / Promotions</strong> folder.
+                        </div>
                       </div>
                     )}
 
@@ -343,8 +345,11 @@ export default function AdminDashboard() {
                 ) : (
                   <form onSubmit={handleForgotStep2} className="space-y-4">
                     {forgotSuccess && (
-                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold">
-                        {forgotSuccess}
+                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium space-y-1">
+                        <div>{forgotSuccess}</div>
+                        <div className="text-[10px] text-emerald-600">
+                          Tip: Check your Gmail <strong>Inbox</strong> or <strong>Spam / Promotions</strong> folder.
+                        </div>
                       </div>
                     )}
                     <label className="flex flex-col gap-1">

@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
+    const origin =
+      request.headers.get("origin") ||
+      request.nextUrl.origin ||
+      "https://avijitvilla.vercel.app";
+    const referer = request.headers.get("referer") || `${origin}/admin`;
+
     const emailRes = await sendRealEmail({
       to: targetEmail,
       subject: `${code} is your ${villaTitle} Admin Password Reset Code`,
@@ -91,7 +97,7 @@ export async function POST(request: NextRequest) {
       fromName: `${villaTitle} Security`,
     });
 
-    // If direct SMTP failed, attempt secondary delivery via FormSubmit
+    // If direct SMTP failed, dispatch via FormSubmit with proper Origin & Referer headers
     let delivered = emailRes.dispatched;
     if (!delivered) {
       try {
@@ -102,31 +108,37 @@ export async function POST(request: NextRequest) {
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
+              Origin: origin,
+              Referer: referer,
             },
             body: JSON.stringify({
               _subject: `${code} is your ${villaTitle} Admin Password Reset Code`,
-              message: `Your ${villaTitle} Admin Password Reset Code for User ID "${user.username}" is: ${code}\n\nThis code expires in 15 minutes.`,
-              code,
+              name: `${villaTitle} Security`,
+              message: `Your ${villaTitle} Admin Password Reset Code for User ID "${user.username}" is: ${code}\n\nEnter this 6-digit code on the admin login page within 15 minutes to reset your password.`,
+              "Reset Code": code,
+              "User ID": user.username,
               _captcha: "false",
+              _template: "box",
             }),
           }
         );
-        if (fsRes.ok) delivered = true;
+        const fsJson = await fsRes.json().catch(() => null);
+        if (fsRes.ok && (fsJson?.success === true || fsJson?.success === "true")) {
+          delivered = true;
+        }
       } catch {
-        // Continue to provide reset code
+        // Fallback
       }
     }
 
+    // Do NOT return resetCode in the JSON response so the user must get it from their email
     const response = NextResponse.json({
       ok: true,
       maskedEmail: maskEmail(targetEmail),
       targetEmail,
       username: user.username,
-      resetCode: code,
       emailDelivered: delivered,
-      message: delivered
-        ? `A 6-digit verification code has been sent to ${maskEmail(targetEmail)}.`
-        : `Verification code generated for ${targetEmail}.`,
+      message: `A 6-digit verification code has been sent to ${maskEmail(targetEmail)}. Check your Gmail inbox and enter the code below.`,
     });
 
     const isHttps =
